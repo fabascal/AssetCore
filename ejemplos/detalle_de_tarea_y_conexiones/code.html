@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Detalle de Tarea y Conexiones</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "surface-dark": "#1a2332", // Slightly lighter than background-dark for panels
+                        "surface-hover": "#252f42",
+                        "border-dark": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Scrollbar for the sidebar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3748;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a5568;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-gray-100 h-screen overflow-hidden">
+<!-- Mock Background Content (Simulating the Project View behind the overlay) -->
+<div class="fixed inset-0 z-0 p-8 opacity-40 pointer-events-none filter blur-sm">
+<div class="grid grid-cols-4 gap-6 h-full">
+<div class="bg-gray-200 dark:bg-surface-dark rounded-xl h-96"></div>
+<div class="bg-gray-200 dark:bg-surface-dark rounded-xl h-full"></div>
+<div class="bg-gray-200 dark:bg-surface-dark rounded-xl h-3/4"></div>
+<div class="bg-gray-200 dark:bg-surface-dark rounded-xl h-5/6"></div>
+</div>
+</div>
+<!-- Overlay Backdrop -->
+<div class="fixed inset-0 bg-black/60 z-10 backdrop-blur-sm transition-opacity"></div>
+<!-- Slide-over Panel (Sidebar) -->
+<div class="fixed inset-y-0 right-0 z-20 w-full max-w-2xl bg-white dark:bg-surface-dark shadow-2xl transform transition-transform border-l border-gray-200 dark:border-border-dark flex flex-col">
+<!-- Header -->
+<div class="px-8 py-6 border-b border-gray-200 dark:border-border-dark flex justify-between items-start sticky top-0 bg-white dark:bg-surface-dark z-10">
+<div class="flex-1 mr-8">
+<div class="flex items-center gap-3 mb-2">
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-primary/20 text-primary border border-primary/20">IT-3429</span>
+<span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">En Progreso</span>
+</div>
+<h1 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">Implementación de Servidor Rack Dell R740</h1>
+</div>
+<div class="flex items-center gap-2 text-gray-400">
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-surface-hover rounded-lg transition-colors">
+<span class="material-icons text-[20px]">share</span>
+</button>
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-surface-hover rounded-lg transition-colors">
+<span class="material-icons text-[20px]">more_horiz</span>
+</button>
+<button class="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 rounded-lg transition-colors ml-2">
+<span class="material-icons text-[24px]">close</span>
+</button>
+</div>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
+<!-- Metadata Grid -->
+<div class="grid grid-cols-2 gap-6">
+<!-- Assignees -->
+<div class="space-y-2">
+<label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Responsables</label>
+<div class="flex items-center gap-2">
+<div class="flex -space-x-2">
+<img alt="User avatar" class="w-8 h-8 rounded-full border-2 border-white dark:border-surface-dark object-cover" data-alt="Portrait of a woman smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNiT0HZ93O1rtVNROs1WO8fbPHC05m7ZA-h1AZJEsop1JGF6Y-oUExp_zLOCR-dCi5U6d-R8dqh1OT-a-iL5RNLcqkq9l_1RFFWjQlpGZlDVI7nu1Lsk7Hc1notb7GJZfMLxzzqFgerVPnmW8R427QSUltk3P-DOLKho4Fr8YdESAl0z3e39GUrHLjJI9ehkG2tkecd85W2GNAYVFTQY5N22heJ3IupajmTszO9T3v8bMHl1kW3Iy8zgdhWqJcwGuyxotMN3uMx7sW"/>
+<img alt="User avatar" class="w-8 h-8 rounded-full border-2 border-white dark:border-surface-dark object-cover" data-alt="Portrait of a man with beard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFKMasDaauLmDB1PsSO7Z-blIDsBp2_ImBz1o5-TUgOGEV9MzE6YjWmvfNAAzXm1y8jAmmyupNcJT1yp8kCDKGgVuBLmsh8HFo-x9xpCsyYrhXVelPjQzGpIf1bcuSoj78q-mPePkinUI5hHPBLmS0RlqTd3N5FYnkcRvHdyXkxW8PYm-sPeJe_fyhqsY_jG6tQg156BGQdnRcLO50tH402zclrx0fEm7oHiIA9ARA3ieOPUjOzSecC3Y1IWms0Jcn36z2rIIXFbaa"/>
+<button class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-surface-hover flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary transition-colors text-xs font-bold z-10">
+<span class="material-icons text-[14px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Dates -->
+<div class="space-y-2">
+<label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fechas</label>
+<div class="flex items-center gap-4 text-sm">
+<div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+<span class="material-icons text-[18px] text-gray-400">calendar_today</span>
+<span>Oct 24 - Nov 02</span>
+</div>
+</div>
+</div>
+<!-- Priority -->
+<div class="space-y-2">
+<label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Prioridad</label>
+<div class="flex items-center gap-2">
+<span class="material-icons text-[18px] text-red-500">flag</span>
+<span class="text-sm font-medium text-gray-900 dark:text-white">Alta</span>
+</div>
+</div>
+<!-- Project -->
+<div class="space-y-2">
+<label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Proyecto</label>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-purple-500"></div>
+<span class="text-sm font-medium text-gray-900 dark:text-white">Migración Data Center</span>
+</div>
+</div>
+</div>
+<hr class="border-gray-200 dark:border-border-dark"/>
+<!-- Description -->
+<div class="space-y-3">
+<label class="text-sm font-semibold text-gray-900 dark:text-white">Descripción</label>
+<div class="prose prose-sm dark:prose-invert text-gray-600 dark:text-gray-400 max-w-none">
+<p>Configuración inicial del servidor Dell PowerEdge R740. Incluye montaje en rack, configuración de RAID 5 y despliegue de imagen base de Ubuntu Server 22.04 LTS. Verificar conectividad de red en VLAN de gestión.</p>
+</div>
+</div>
+<!-- Assets & Connectivity (Featured Section) -->
+<div class="bg-background-light dark:bg-background-dark/50 rounded-xl p-5 border border-gray-200 dark:border-border-dark space-y-4 relative overflow-hidden group">
+<!-- Decorative gradient glow -->
+<div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none group-hover:bg-primary/20 transition-all duration-700"></div>
+<div class="flex items-center justify-between">
+<h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+<span class="material-icons text-primary">dns</span>
+                        Activos Vinculados
+                    </h3>
+<span class="text-xs font-medium px-2 py-1 bg-gray-200 dark:bg-surface-hover rounded text-gray-600 dark:text-gray-400">2 Activos</span>
+</div>
+<!-- Linked Assets List -->
+<div class="space-y-3">
+<!-- Asset Card 1 -->
+<div class="flex items-center p-3 bg-white dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-border-dark shadow-sm hover:border-primary/50 transition-colors group/card cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-background-dark flex items-center justify-center text-gray-500 mr-3">
+<span class="material-icons">storage</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between mb-0.5">
+<h4 class="text-sm font-medium text-gray-900 dark:text-white truncate">Dell PowerEdge R740</h4>
+<span class="flex h-2 w-2 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+</span>
+</div>
+<div class="flex items-center text-xs text-gray-500 dark:text-gray-400 gap-2">
+<span class="bg-gray-100 dark:bg-background-dark px-1.5 rounded">TAG: SRV-01</span>
+<span>•</span>
+<span>Rack 4U - Slot 12</span>
+</div>
+</div>
+<button class="opacity-0 group-hover/card:opacity-100 p-1.5 hover:bg-gray-100 dark:hover:bg-surface-hover rounded text-gray-400 transition-all">
+<span class="material-icons text-[18px]">open_in_new</span>
+</button>
+</div>
+<!-- Asset Card 2 -->
+<div class="flex items-center p-3 bg-white dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-border-dark shadow-sm hover:border-primary/50 transition-colors group/card cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-background-dark flex items-center justify-center text-gray-500 mr-3">
+<span class="material-icons">router</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between mb-0.5">
+<h4 class="text-sm font-medium text-gray-900 dark:text-white truncate">Cisco Switch Catalyst 9200</h4>
+<span class="flex h-2 w-2 relative">
+<span class="relative inline-flex rounded-full h-2 w-2 bg-gray-500"></span>
+</span>
+</div>
+<div class="flex items-center text-xs text-gray-500 dark:text-gray-400 gap-2">
+<span class="bg-gray-100 dark:bg-background-dark px-1.5 rounded">TAG: SW-Core-02</span>
+<span>•</span>
+<span>Offline</span>
+</div>
+</div>
+<button class="opacity-0 group-hover/card:opacity-100 p-1.5 hover:bg-gray-100 dark:hover:bg-surface-hover rounded text-gray-400 transition-all">
+<span class="material-icons text-[18px]">open_in_new</span>
+</button>
+</div>
+</div>
+<!-- Main Action Button -->
+<button class="w-full mt-2 py-2.5 px-4 bg-primary hover:bg-primary/90 active:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 transition-all font-medium text-sm shadow-lg shadow-primary/20">
+<span class="material-icons text-[18px]">add_link</span>
+                    Vincular Nuevo Activo
+                </button>
+</div>
+<!-- Dependencies Checklist -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-semibold text-gray-900 dark:text-white">Checklist de Dependencias</h3>
+<span class="text-xs text-gray-500">2/4 Completado</span>
+</div>
+<!-- Progress Bar -->
+<div class="h-1.5 w-full bg-gray-100 dark:bg-surface-hover rounded-full overflow-hidden">
+<div class="h-full bg-primary w-1/2 rounded-full"></div>
+</div>
+<div class="space-y-0.5">
+<!-- Item 1 (Checked) -->
+<label class="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-surface-hover/50 rounded-lg cursor-pointer group transition-colors">
+<input checked="" class="mt-0.5 w-4 h-4 text-primary bg-transparent border-gray-300 dark:border-gray-600 rounded focus:ring-primary focus:ring-offset-0 focus:ring-opacity-50" type="checkbox"/>
+<span class="text-sm text-gray-400 line-through group-hover:text-gray-500 transition-colors">Aprobación de presupuesto IT</span>
+</label>
+<!-- Item 2 (Checked) -->
+<label class="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-surface-hover/50 rounded-lg cursor-pointer group transition-colors">
+<input checked="" class="mt-0.5 w-4 h-4 text-primary bg-transparent border-gray-300 dark:border-gray-600 rounded focus:ring-primary focus:ring-offset-0 focus:ring-opacity-50" type="checkbox"/>
+<span class="text-sm text-gray-400 line-through group-hover:text-gray-500 transition-colors">Recepción física del hardware</span>
+</label>
+<!-- Item 3 (Unchecked) -->
+<label class="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-surface-hover/50 rounded-lg cursor-pointer group transition-colors">
+<input class="mt-0.5 w-4 h-4 text-primary bg-transparent border-gray-300 dark:border-gray-600 rounded focus:ring-primary focus:ring-offset-0 focus:ring-opacity-50" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors">Configuración de IP Estática</span>
+</label>
+<!-- Item 4 (Unchecked) -->
+<label class="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-surface-hover/50 rounded-lg cursor-pointer group transition-colors">
+<input class="mt-0.5 w-4 h-4 text-primary bg-transparent border-gray-300 dark:border-gray-600 rounded focus:ring-primary focus:ring-offset-0 focus:ring-opacity-50" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors">Actualización de Firmware BIOS</span>
+</label>
+<!-- Add new Item -->
+<button class="flex items-center gap-3 p-2 text-sm text-gray-500 hover:text-primary transition-colors w-full text-left mt-2">
+<span class="material-icons text-[16px]">add</span>
+                        Añadir item
+                    </button>
+</div>
+</div>
+<hr class="border-gray-200 dark:border-border-dark"/>
+<!-- Attachments -->
+<div class="space-y-4">
+<h3 class="font-semibold text-gray-900 dark:text-white">Archivos Adjuntos</h3>
+<div class="grid grid-cols-2 gap-4">
+<!-- File Card -->
+<div class="flex items-center p-3 rounded-lg border border-gray-200 dark:border-border-dark hover:bg-gray-50 dark:hover:bg-surface-hover transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded bg-red-100 dark:bg-red-900/20 text-red-500 flex items-center justify-center mr-3 font-bold text-xs uppercase">PDF</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">Manual_Servidor_R740.pdf</p>
+<p class="text-xs text-gray-500">2.4 MB</p>
+</div>
+</div>
+<!-- File Card -->
+<div class="flex items-center p-3 rounded-lg border border-gray-200 dark:border-border-dark hover:bg-gray-50 dark:hover:bg-surface-hover transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded bg-blue-100 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center mr-3 font-bold text-xs uppercase">DOC</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">Config_Network_Plan.docx</p>
+<p class="text-xs text-gray-500">850 KB</p>
+</div>
+</div>
+<!-- Upload Zone -->
+<button class="col-span-2 border-2 border-dashed border-gray-300 dark:border-border-dark rounded-lg p-6 flex flex-col items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors group">
+<span class="material-icons text-3xl mb-2 group-hover:scale-110 transition-transform">cloud_upload</span>
+<span class="text-sm font-medium">Arrastra archivos o haz clic para subir</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer / Input -->
+<div class="p-6 border-t border-gray-200 dark:border-border-dark bg-white dark:bg-surface-dark mt-auto">
+<div class="flex items-start gap-4">
+<img alt="Current user avatar" class="w-8 h-8 rounded-full object-cover" data-alt="Portrait of current user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLMQnn-YFoitA05l8eVlRjIMd63oyCAtpINUMoVRrWn5RTt6viI7X_uOkAYjc-7IMeRbl_62AFuKUM1ujxhcKMZFoOm1fczmzPrpQRJSlfdq_EYK7fBk5rrW12UH4kujxeTtdnFQj19lSQvQcON7JQ7AdfZ85spkEyReYAK6JZ_zqu89gjm0wF2JxdK7lkjOPkKz3jaPoivEDZ0eiOGKZZbBxVExKPY6J_q9kQw3qkH7x7wj_bwMtn5FqpfUQhZ0SO2WtB4d7JxTwO"/>
+<div class="flex-1">
+<div class="relative">
+<textarea class="w-full bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-border-dark rounded-lg pl-4 pr-12 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-primary focus:border-primary resize-none" placeholder="Escribe un comentario o @menciona a alguien..." rows="1"></textarea>
+<button class="absolute right-2 top-1.5 p-1 text-primary hover:bg-primary/10 rounded transition-colors">
+<span class="material-icons text-[20px]">send</span>
+</button>
+</div>
+<div class="flex items-center justify-between mt-2">
+<div class="flex gap-2">
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><span class="material-icons text-[18px]">attach_file</span></button>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><span class="material-icons text-[18px]">sentiment_satisfied</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,551 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  MAINTENANCE
+  SCRAP
+
+  @@map("asset_status")
+}
+
+enum DeviceType {
+  LAPTOP
+  DESKTOP
+  SERVER
+  PRINTER
+  MONITOR
+  OTHER
+
+  @@map("device_type")
+}
+
+enum StorageType {
+  SSD
+  HDD
+  NVME
+
+  @@map("storage_type")
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  PROVIDER
+  CLOSED
+  CANCELLED
+
+  @@map("ticket_status")
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@map("ticket_priority")
+}
+
+enum TicketLevel {
+  LEVEL_1   @map("1")
+  LEVEL_2   @map("2")
+  PROVEEDOR
+
+  @@map("ticket_level")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  fullName     String   @map("full_name")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  isActive     Boolean  @default(true) @map("is_active")
+  roleId       Int      @map("role_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  role         Role     @relation(fields: [roleId], references: [id])
+  assignedTickets Ticket[]       @relation("TicketAssignee")
+  ticketEvents    TicketEvent[]  @relation("TicketEventActor")
+  ticketAttachments TicketAttachment[] @relation("AttachmentUploader")
+  ticketComments  TicketComment[] @relation("CommentAuthor")
+  supportTopicLevels SupportLevelAssignment[] @relation("SupportAssignmentTech")
+  refreshTokens  RefreshToken[]
+  assignedTasks  ProjectTask[]  @relation("TaskAssignee")
+  custodyUploads CustodyDocument[] @relation("CustodyUploader")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id          Int       @id @default(autoincrement())
+  tokenHash   String    @unique @map("token_hash")
+  userId      Int       @map("user_id")
+  family      String
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([family])
+  @@map("refresh_tokens")
+}
+
+model SupportTopic {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  levels      SupportTopicLevel[]
+  tickets     Ticket[]
+
+  @@map("support_topics")
+}
+
+model SupportTopicLevel {
+  id               Int      @id @default(autoincrement())
+  topicId          Int      @map("topic_id")
+  levelOrder       Int      @map("level_order")
+  levelName        String   @map("level_name")
+  escalationTarget String   @map("escalation_target")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+  topic            SupportTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  assignments      SupportLevelAssignment[]
+
+  @@unique([topicId, levelOrder])
+  @@map("support_topic_levels")
+}
+
+model SupportLevelAssignment {
+  id         Int      @id @default(autoincrement())
+  levelId    Int      @map("level_id")
+  locationId Int?     @map("location_id")
+  techUserId Int?     @map("tech_user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  level      SupportTopicLevel @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  techUser   User?     @relation("SupportAssignmentTech", fields: [techUserId], references: [id], onDelete: SetNull)
+
+  @@map("support_level_assignments")
+}
+
+model Role {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  description     String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at")
+  users           User[]
+  rolePermissions RolePermission[]
+  roleMenus       RoleMenu[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique
+  label           String
+  description     String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at")
+  rolePermissions RolePermission[]
+  menus           Menu[]           @relation("MenuPermission")
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Menu {
+  id                 Int         @id @default(autoincrement())
+  label              String
+  icon               String?
+  path               String      @unique
+  parentId           Int?        @map("parent_id")
+  displayOrder       Int         @default(0) @map("display_order")
+  requiredPermission String?     @map("required_permission")
+  isActive           Boolean     @default(true) @map("is_active")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @default(now()) @updatedAt @map("updated_at")
+  parent             Menu?       @relation("MenuHierarchy", fields: [parentId], references: [id])
+  children           Menu[]      @relation("MenuHierarchy")
+  permission         Permission? @relation("MenuPermission", fields: [requiredPermission], references: [code])
+  roleMenus          RoleMenu[]
+
+  @@map("menus")
+}
+
+model RoleMenu {
+  roleId    Int      @map("role_id")
+  menuId    Int      @map("menu_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, menuId])
+  @@map("role_menus")
+}
+
+model Location {
+  id          Int        @id @default(autoincrement())
+  name        String
+  parentId    Int?       @map("parent_id")
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
+  parent      Location?  @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Location[] @relation("LocationHierarchy")
+  assets      Asset[]
+  supportAssignments SupportLevelAssignment[]
+
+  @@map("locations")
+}
+
+model CatalogBrand {
+  id        Int            @id @default(autoincrement())
+  name      String         @unique
+  isActive  Boolean        @default(true) @map("is_active")
+  createdAt DateTime       @default(now()) @map("created_at")
+  models    CatalogModel[]
+
+  @@map("catalog_brands")
+}
+
+model CatalogModel {
+  id        Int          @id @default(autoincrement())
+  brandId   Int          @map("brand_id")
+  name      String
+  isActive  Boolean      @default(true) @map("is_active")
+  createdAt DateTime     @default(now()) @map("created_at")
+  brand     CatalogBrand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, name])
+  @@map("catalog_models")
+}
+
+model CatalogProcessor {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("catalog_processors")
+}
+
+model CatalogRam {
+  id        Int      @id @default(autoincrement())
+  label     String   @unique
+  sizeGb    Int      @map("size_gb")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("catalog_ram")
+}
+
+model CatalogStorage {
+  id        Int      @id @default(autoincrement())
+  label     String   @unique
+  sizeGb    Int      @map("size_gb")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("catalog_storage")
+}
+
+model Asset {
+  id             Int          @id @default(autoincrement())
+  assetCode      String       @unique @map("asset_code")
+  brand          String
+  model          String
+  serialNumber   String       @unique @map("serial_number")
+  equipmentValue Float?       @map("equipment_value")
+  status         AssetStatus  @default(AVAILABLE)
+  assetTypeId    Int?         @map("asset_type_id")
+  assetType      AssetType?   @relation(fields: [assetTypeId], references: [id], onDelete: SetNull)
+  processor      String?
+  ramGb          Int?         @map("ram_gb")
+  storageGb      Int?         @map("storage_gb")
+  storageType    StorageType? @map("storage_type")
+  purchaseDate   DateTime?    @map("purchase_date")
+  warrantyEnd    DateTime?    @map("warranty_end")
+  usefulLifeYears Int?        @map("useful_life_years")
+  endOfLifeDate  DateTime?    @map("end_of_life_date")
+  locationId     Int?         @map("location_id")
+  assignedToName String?      @map("assigned_to_name")
+  assignedToDate DateTime?    @map("assigned_to_date")
+  specifications Json         @default("{}")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
+  location       Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  tickets        Ticket[]
+  projectTasks   ProjectTask[]
+  custodyDocs    CustodyDocument[]
+
+  @@map("assets")
+}
+
+model CustodyDocument {
+  id             Int      @id @default(autoincrement())
+  assetId        Int      @map("asset_id")
+  assignedToName String   @map("assigned_to_name")
+  assignedToDate DateTime? @map("assigned_to_date")
+  filename       String
+  originalName   String   @map("original_name")
+  mimeType       String   @map("mime_type")
+  sizeBytes      Int      @map("size_bytes")
+  uploadedById   Int?     @map("uploaded_by_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  uploadedBy     User?    @relation("CustodyUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@map("custody_documents")
+}
+
+model Ticket {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String
+  status       TicketStatus  @default(OPEN)
+  priority     TicketPriority @default(MEDIUM)
+  level        TicketLevel   @default(LEVEL_1)
+  supportTopicId Int?        @map("support_topic_id")
+  assetId      Int           @map("asset_id")
+  assignedToId Int?          @map("assigned_to_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at")
+  supportTopic SupportTopic? @relation(fields: [supportTopicId], references: [id], onDelete: SetNull)
+  asset        Asset         @relation(fields: [assetId], references: [id])
+  assignedTo   User?         @relation("TicketAssignee", fields: [assignedToId], references: [id])
+  events       TicketEvent[]
+  attachments  TicketAttachment[]
+  comments     TicketComment[]
+  incomingMessages IncomingMessage[]
+  escalationTracking TicketEscalationTracking?
+
+  @@map("tickets")
+}
+
+model TicketEvent {
+  id          Int          @id @default(autoincrement())
+  ticketId    Int          @map("ticket_id")
+  actorUserId Int?         @map("actor_user_id")
+  action      String
+  details     Json         @default("{}")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  ticket      Ticket       @relation(fields: [ticketId], references: [id])
+  actor       User?        @relation("TicketEventActor", fields: [actorUserId], references: [id])
+
+  @@map("ticket_events")
+}
+
+model TicketAttachment {
+  id           Int      @id @default(autoincrement())
+  ticketId     Int      @map("ticket_id")
+  filename     String
+  originalName String   @map("original_name")
+  mimeType     String   @map("mime_type")
+  sizeBytes    Int      @map("size_bytes")
+  uploadedById Int?     @map("uploaded_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  ticket       Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  uploadedBy   User?    @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@map("ticket_attachments")
+}
+
+model TicketComment {
+  id          Int      @id @default(autoincrement())
+  ticketId    Int      @map("ticket_id")
+  authorId    Int?     @map("author_id")
+  body        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author      User?    @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@map("ticket_comments")
+}
+
+model IncomingMessage {
+  id                   Int      @id @default(autoincrement())
+  channel              String
+  sender               String?
+  subject              String?
+  body                 String
+  rawPayload           Json     @map("raw_payload")
+  aiIntent             String?  @map("ai_intent")
+  aiAction             String?  @map("ai_action")
+  detectedAssetCode    String?  @map("detected_asset_code")
+  detectedSerialNumber String?  @map("detected_serial_number")
+  createdTicketId      Int?     @map("created_ticket_id")
+  processedAt          DateTime? @map("processed_at")
+  createdAt            DateTime @default(now()) @map("created_at")
+  createdTicket        Ticket?  @relation(fields: [createdTicketId], references: [id])
+
+  @@map("incoming_messages")
+}
+
+model SLAPolicy {
+  id                             Int     @id @default(autoincrement())
+  name                           String  @unique
+  description                    String?
+  priority                        TicketPriority
+  level                           TicketLevel
+  escalationHoursLevel1To2        Int     @map("escalation_hours_level_1_to_2")
+  escalationHoursLevel2ToProvider Int     @map("escalation_hours_level_2_to_provider")
+  autoEscalate                    Boolean @default(true) @map("auto_escalate")
+  isActive                        Boolean @default(true) @map("is_active")
+  createdAt                       DateTime @default(now()) @map("created_at")
+  updatedAt                       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("sla_policies")
+}
+
+model TicketEscalationTracking {
+  id               Int       @id @default(autoincrement())
+  ticketId         Int       @unique @map("ticket_id")
+  currentLevel     TicketLevel @map("current_level")
+  escalationDueAt  DateTime  @map("escalation_due_at")
+  isEscalated      Boolean   @default(false) @map("is_escalated")
+  autoEscalatedAt  DateTime? @map("auto_escalated_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  ticket           Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_escalation_tracking")
+}
+
+// ── Proyectos & Gantt ──────────────────────────────
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+
+  @@map("project_status")
+}
+
+enum GanttTaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("gantt_task_status")
+}
+
+enum DependencyType {
+  FINISH_TO_START
+  START_TO_START
+  FINISH_TO_FINISH
+  START_TO_FINISH
+
+  @@map("dependency_type")
+}
+
+model Project {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  status      ProjectStatus @default(PLANNING)
+  startDate   DateTime?     @map("start_date") @db.Date
+  endDate     DateTime?     @map("end_date") @db.Date
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at")
+  tasks       ProjectTask[]
+
+  @@map("projects")
+}
+
+model ProjectTask {
+  id           Int             @id @default(autoincrement())
+  projectId    Int             @map("project_id")
+  parentTaskId Int?            @map("parent_task_id")
+  name         String
+  description  String?
+  status       GanttTaskStatus @default(PENDING)
+  startDate    DateTime?       @map("start_date") @db.Date
+  endDate      DateTime?       @map("end_date") @db.Date
+  progress     Int             @default(0)
+  isCritical   Boolean         @default(false) @map("is_critical")
+  isMilestone  Boolean         @default(false) @map("is_milestone")
+  sortOrder    Int             @default(0) @map("sort_order")
+  assignedToId Int?            @map("assigned_to_id")
+  assetId      Int?            @map("asset_id")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentTask   ProjectTask?    @relation("TaskHierarchy", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  children     ProjectTask[]   @relation("TaskHierarchy")
+  assignedTo   User?           @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  asset        Asset?          @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  dependenciesAsPredecessor TaskDependency[] @relation("DependencyPredecessor")
+  dependenciesAsSuccessor   TaskDependency[] @relation("DependencySuccessor")
+
+  @@map("project_tasks")
+}
+
+model TaskDependency {
+  id              Int            @id @default(autoincrement())
+  predecessorId   Int            @map("predecessor_id")
+  successorId     Int            @map("successor_id")
+  type            DependencyType @default(FINISH_TO_START)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  predecessor     ProjectTask    @relation("DependencyPredecessor", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successor       ProjectTask    @relation("DependencySuccessor", fields: [successorId], references: [id], onDelete: Cascade)
+
+  @@unique([predecessorId, successorId])
+  @@map("task_dependencies")
+}
+
+model AssetType {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  usefulLifeYears Int      @default(5) @map("useful_life_years")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  assets          Asset[]
+
+  @@map("asset_types")
+}
+
+model Company {
+  id        Int      @id @default(autoincrement())
+  name      String
+  rfc       String?
+  address   String?
+  phone     String?
+  email     String?
+  website   String?
+  logoData  String?  @map("logo_data")
+  logoMime  String?  @map("logo_mime")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("companies")
+}

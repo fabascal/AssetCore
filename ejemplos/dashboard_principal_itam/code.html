@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard Principal ITAM</title>
+<meta content="Dashboard principal de gestión IT con vista de pájaro. Incluye KPIs de salud de proyectos y gestión de activos." name="description"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#135bec",
+              "primary-dark": "#0e45b5",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101622",
+              "surface-dark": "#1a2233",
+              "surface-lighter": "#242f45",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #101622; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #242f45; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #135bec; 
+        }
+        
+        /* Utility for consistent card styles */
+        .card {
+            @apply bg-white dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200 font-display antialiased min-h-screen flex overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-64 bg-white dark:bg-surface-dark border-r border-gray-200 dark:border-gray-800 flex-col hidden md:flex z-20">
+<!-- Logo Area -->
+<div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-lg">
+                    I
+                </div>
+<span class="text-lg font-bold text-gray-900 dark:text-white tracking-tight">ITAM<span class="text-primary">Pro</span></span>
+</div>
+</div>
+<!-- Navigation -->
+<nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-primary/10 text-primary dark:text-white dark:bg-primary/20" href="#">
+<span class="material-icons text-xl mr-3">dashboard</span>
+                Dashboard
+            </a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-lighter hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-icons text-xl mr-3">folder_open</span>
+                Portafolio
+            </a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-lighter hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-icons text-xl mr-3">dns</span>
+                Inventario IT
+                <span class="ml-auto bg-red-500/10 text-red-500 py-0.5 px-2 rounded-full text-xs font-semibold">3</span>
+</a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-lighter hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-icons text-xl mr-3">description</span>
+                Documentos
+            </a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-lighter hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-icons text-xl mr-3">bar_chart</span>
+                Reportes
+            </a>
+<div class="pt-6 mt-6 border-t border-gray-200 dark:border-gray-800">
+<p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Configuración</p>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-lighter hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-icons text-xl mr-3">settings</span>
+                    Sistema
+                </a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-lighter hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-icons text-xl mr-3">people</span>
+                    Usuarios
+                </a>
+</div>
+</nav>
+<!-- User Profile Snippet -->
+<div class="border-t border-gray-200 dark:border-gray-800 p-4">
+<div class="flex items-center gap-3">
+<img alt="Profile Picture" class="h-9 w-9 rounded-full border border-gray-200 dark:border-gray-700" data-alt="Portrait of a male user in a collared shirt" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzAY9_BskvjORyp_G-8zt3Zj6_hNKjHohQ9XBvzbMgZRNmdu4RS4g1WNty77V435nGhrZYLh75qyfGELX7YOEstFS4ho61Mt52r7HIaGpRgk4-8EVp3oaKN7oRo1TrQCFa5EZQxtNX1zhFuN4MqbjOl62yXqB0SpZbIsAsDIDahB2xxLXXiL7F5bNr3rp6_G1fbKvOxcgnfQdzikhAsjpCwIjmURQuW-379Nnr1b05ro6-QtwCNlxMcP5HwdYKEXc9BWMcckD1HxLm"/>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-gray-900 dark:text-white truncate">Alejandro Ruiz</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 truncate">Admin. Sistemas</p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-icons text-xl">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+<!-- Top Header -->
+<header class="h-16 bg-white dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 z-10">
+<!-- Mobile Menu Button (Visible only on small screens) -->
+<button class="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white mr-4">
+<span class="material-icons">menu</span>
+</button>
+<!-- Search -->
+<div class="flex-1 max-w-lg">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons text-gray-400 dark:text-gray-500 text-xl group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg leading-5 bg-gray-50 dark:bg-surface-dark text-gray-900 dark:text-gray-200 placeholder-gray-500 focus:outline-none focus:bg-white dark:focus:bg-surface-lighter focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-200" placeholder="Buscar activos, proyectos o tickets..." type="text"/>
+</div>
+</div>
+<!-- Header Actions -->
+<div class="flex items-center gap-4 ml-6">
+<button class="relative p-1 rounded-full text-gray-400 hover:text-gray-500 dark:hover:text-white focus:outline-none">
+<span class="sr-only">Notificaciones</span>
+<span class="material-icons">notifications</span>
+<span class="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-surface-dark"></span>
+</button>
+<div class="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+<button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
+<span class="material-icons text-lg mr-2">add</span>
+                    Nuevo Proyecto
+                </button>
+</div>
+</header>
+<!-- Content Scroll Area -->
+<div class="flex-1 overflow-y-auto p-6 scroll-smooth">
+<!-- Page Title & Breadcrumb -->
+<div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+<div>
+<h1 class="text-2xl font-bold text-gray-900 dark:text-white font-display">Resumen General</h1>
+<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Vista de pájaro del estado de proyectos y activos.</p>
+</div>
+<div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+<span class="flex items-center">
+<span class="material-icons text-base mr-1">home</span>
+                        Inicio
+                    </span>
+<span class="mx-2">/</span>
+<span class="text-primary font-medium">Dashboard</span>
+</div>
+</div>
+<!-- KPIs: Project Health -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<!-- KPI 1: On Time -->
+<div class="card p-5 border-l-4 border-l-emerald-500 relative overflow-hidden group">
+<div class="flex justify-between items-start z-10 relative">
+<div>
+<p class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">A Tiempo</p>
+<h3 class="text-3xl font-bold text-gray-900 dark:text-white mt-1">12</h3>
+<p class="text-xs text-emerald-600 dark:text-emerald-400 mt-2 font-medium flex items-center">
+<span class="material-icons text-sm mr-1">trending_up</span>
+                                +2 esta semana
+                            </p>
+</div>
+<div class="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+<span class="material-icons text-emerald-500 dark:text-emerald-400 text-2xl">check_circle</span>
+</div>
+</div>
+</div>
+<!-- KPI 2: Delayed -->
+<div class="card p-5 border-l-4 border-l-amber-500 relative overflow-hidden group">
+<div class="flex justify-between items-start z-10 relative">
+<div>
+<p class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Retrasados</p>
+<h3 class="text-3xl font-bold text-gray-900 dark:text-white mt-1">4</h3>
+<p class="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium flex items-center">
+<span class="material-icons text-sm mr-1">warning</span>
+                                Requieren revisión
+                            </p>
+</div>
+<div class="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
+<span class="material-icons text-amber-500 dark:text-amber-400 text-2xl">schedule</span>
+</div>
+</div>
+</div>
+<!-- KPI 3: Critical -->
+<div class="card p-5 border-l-4 border-l-red-500 relative overflow-hidden group">
+<div class="flex justify-between items-start z-10 relative">
+<div>
+<p class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Críticos</p>
+<h3 class="text-3xl font-bold text-gray-900 dark:text-white mt-1">2</h3>
+<p class="text-xs text-red-600 dark:text-red-400 mt-2 font-medium flex items-center">
+<span class="material-icons text-sm mr-1">error</span>
+                                Bloqueantes activos
+                            </p>
+</div>
+<div class="p-2 bg-red-50 dark:bg-red-500/10 rounded-lg">
+<span class="material-icons text-red-500 dark:text-red-400 text-2xl">report</span>
+</div>
+</div>
+</div>
+<!-- KPI 4: Total Assets Managed -->
+<div class="card p-5 border-l-4 border-l-primary relative overflow-hidden group">
+<div class="flex justify-between items-start z-10 relative">
+<div>
+<p class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Activos</p>
+<h3 class="text-3xl font-bold text-gray-900 dark:text-white mt-1">1,248</h3>
+<p class="text-xs text-primary mt-2 font-medium flex items-center">
+<span class="material-icons text-sm mr-1">update</span>
+                                Actualizado hoy
+                            </p>
+</div>
+<div class="p-2 bg-blue-50 dark:bg-primary/20 rounded-lg">
+<span class="material-icons text-primary dark:text-blue-300 text-2xl">devices</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Grid: Timeline & Asset Alerts -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+<!-- Left Column: Upcoming Commitments (2/3 width on LG) -->
+<div class="lg:col-span-2 flex flex-col gap-6">
+<!-- Timeline Widget -->
+<div class="card flex flex-col h-full">
+<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Próximas Fechas Compromiso</h3>
+<button class="text-sm text-primary hover:text-primary-dark font-medium">Ver Calendario</button>
+</div>
+<div class="p-6">
+<!-- Timeline container -->
+<div class="relative pl-4 border-l-2 border-gray-200 dark:border-gray-700 space-y-8">
+<!-- Item 1 -->
+<div class="relative">
+<div class="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white dark:border-surface-dark"></div>
+<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+<div>
+<span class="text-xs font-semibold text-red-500 uppercase tracking-wide">Hoy, 14:00</span>
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mt-1">Migración Servidor DB-01</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Ventana de mantenimiento crítica. Afecta CRM.</p>
+</div>
+<div class="flex -space-x-2">
+<img alt="Team member" class="w-8 h-8 rounded-full border-2 border-white dark:border-surface-dark" data-alt="Male portrait close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEdGWqM1qLzz2osixtLan5NpHRNW8Xjy4NTSwXrOQJeIAx2qqSVcaJhhOfXrGpHcVIdMTl3SI-y_9pJIW5GaU7gNOEP8ZiYnEjGXYo-60OXsOFRyr9M7-tpTep2kjX5ACCPzjZOtPmB4YqBHupUstpHC_s4VAgPKkDk2oTxoaxWnRX4DdB_Hr3nmggyVXHMkkkhU5QfBYjPhtlU9tdFXEx8JKGrNfQUv7L7fDIbA38hyblv4CgsB_clRFf8uEaXquNeb-lv65khTTr"/>
+<img alt="Team member" class="w-8 h-8 rounded-full border-2 border-white dark:border-surface-dark" data-alt="Female portrait smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU4vR5ZPhLS0HMMHFGl4prowQmxKU9JmbF18YS3PxmhJc2kPlg-58MT79xgjf73RtGa4Lwk5x2NhxbTA4zQz7hmCcXneSYZ08SlAXHAz9UBoS0YqNS1PliKzaTuC2HHrI7i326z5xtVsQh6quRabymuNIyZ4ipIkGdCYx4cuhQcSV246y5cW1D4R0Pac4N1vtusOaAhMvw85OA-PEvc3icWvYJW4htxsTfI7xwYL0iIov3pW31bAgkw1P9o1yaoksqAwJBXY1f2jaW"/>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="relative">
+<div class="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-amber-500 border-2 border-white dark:border-surface-dark"></div>
+<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+<div>
+<span class="text-xs font-semibold text-amber-500 uppercase tracking-wide">Mañana, 09:00</span>
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mt-1">Revisión de Licencias Adobe</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Vencimiento de contrato anual. Preparar reporte de uso.</p>
+</div>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-white dark:border-surface-dark bg-gray-200 dark:bg-surface-lighter flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">JS</div>
+</div>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="relative">
+<div class="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-primary border-2 border-white dark:border-surface-dark"></div>
+<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+<div>
+<span class="text-xs font-semibold text-primary uppercase tracking-wide">Jueves, 16 Nov</span>
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mt-1">Entrega Hardware Nuevos Ingresos</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Configuración y entrega de 5 MacBooks Pro.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Map View (Decorative for context) -->
+<div class="card overflow-hidden h-64 relative">
+<img alt="Map view of city showing assets" class="w-full h-full object-cover opacity-60" data-alt="Dark stylized map interface" data-location="Global View" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_sku8AfQVY-AzjE8m31F_Xn3RJZCtsj8ghTRJ1qzgmHH766xoCzM30QPzT9PuSq_FFQk8V1K51kaRbHEtSW8DdA7JbYzI4n9Qi9TqU8eSl-Yr2ktCaqLt6b9ej-Patzsr7sRb5CtjLEp16QtOteOqeDjTjAx8p2x7tE2oT1G_z7_8ucBmQMo58GC6J8VbbDxGv7zQ0Mh51wJQ1LcWkl6FbxTCgdGW2XxyEN5NCQ_8ZLr3bxGP4JHSP6awJIhYUhbf8BA5JbevD14Q"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dark to-transparent"></div>
+<div class="absolute bottom-4 left-6">
+<h3 class="text-white font-bold text-lg">Ubicación de Activos Críticos</h3>
+<p class="text-gray-300 text-sm">3 Sedes con alertas activas</p>
+</div>
+<div class="absolute top-4 right-6 bg-surface-dark/80 backdrop-blur-md px-3 py-1 rounded-lg border border-gray-700">
+<span class="flex items-center text-xs text-white"><span class="h-2 w-2 rounded-full bg-green-500 mr-2"></span> Online</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Asset Alerts (1/3 width on LG) -->
+<div class="lg:col-span-1">
+<div class="card h-full flex flex-col">
+<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-surface-dark/50 rounded-t-xl">
+<h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+<span class="material-icons text-amber-500 mr-2">notifications_active</span>
+                                Alertas de Activos
+                            </h3>
+<span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">5</span>
+</div>
+<div class="flex-1 overflow-y-auto p-0">
+<ul class="divide-y divide-gray-200 dark:divide-gray-800">
+<!-- Alert Item 1 -->
+<li class="p-4 hover:bg-gray-50 dark:hover:bg-surface-lighter transition-colors cursor-pointer group">
+<div class="flex items-start space-x-3">
+<div class="flex-shrink-0">
+<div class="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
+<span class="material-icons text-red-500 text-xl">battery_alert</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">Reemplazo Batería UPS</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sala de Servidores 2 • Vida útil &lt; 5%</p>
+<p class="text-xs text-red-500 mt-2 font-medium">Acción Inmediata</p>
+</div>
+</div>
+</li>
+<!-- Alert Item 2 -->
+<li class="p-4 hover:bg-gray-50 dark:hover:bg-surface-lighter transition-colors cursor-pointer group">
+<div class="flex items-start space-x-3">
+<div class="flex-shrink-0">
+<div class="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+<span class="material-icons text-amber-500 text-xl">security</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">Licencia Antivirus</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">50 Equipos en Marketing</p>
+<p class="text-xs text-amber-500 mt-2 font-medium">Expira en 3 días</p>
+</div>
+</div>
+</li>
+<!-- Alert Item 3 -->
+<li class="p-4 hover:bg-gray-50 dark:hover:bg-surface-lighter transition-colors cursor-pointer group">
+<div class="flex items-start space-x-3">
+<div class="flex-shrink-0">
+<div class="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center">
+<span class="material-icons text-blue-500 text-xl">storage</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">Espacio Disco Bajo</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">NAS Principal • 92% ocupado</p>
+<button class="mt-2 text-xs bg-white dark:bg-surface-dark border border-gray-300 dark:border-gray-600 rounded px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">Liberar espacio</button>
+</div>
+</div>
+</li>
+<!-- Alert Item 4 -->
+<li class="p-4 hover:bg-gray-50 dark:hover:bg-surface-lighter transition-colors cursor-pointer group">
+<div class="flex items-start space-x-3">
+<div class="flex-shrink-0">
+<div class="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+<span class="material-icons text-gray-500 dark:text-gray-400 text-xl">laptop</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">Garantía Hardware</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Dell XPS 15 - ID: 88291</p>
+<p class="text-xs text-gray-400 mt-2 font-medium">Vence en 15 días</p>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="p-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-surface-dark/50 rounded-b-xl text-center">
+<button class="text-sm text-primary hover:text-primary-dark font-medium w-full">Ver todas las alertas</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Stats Row (Optional Extra Context) -->
+<div class="card p-6 mb-6">
+<div class="flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="flex items-center gap-4 w-full md:w-auto">
+<div class="p-3 bg-primary/10 rounded-full">
+<span class="material-icons text-primary">cloud_done</span>
+</div>
+<div>
+<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Sincronización Cloud</h4>
+<p class="text-lg font-bold text-gray-900 dark:text-white">100% Completada</p>
+</div>
+</div>
+<div class="h-px w-full md:h-12 md:w-px bg-gray-200 dark:bg-gray-700"></div>
+<div class="flex items-center gap-4 w-full md:w-auto">
+<div class="p-3 bg-primary/10 rounded-full">
+<span class="material-icons text-primary">attach_money</span>
+</div>
+<div>
+<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Presupuesto Q4</h4>
+<p class="text-lg font-bold text-gray-900 dark:text-white">$45,200 / $60,000</p>
+</div>
+</div>
+<div class="h-px w-full md:h-12 md:w-px bg-gray-200 dark:bg-gray-700"></div>
+<div class="flex items-center gap-4 w-full md:w-auto">
+<div class="p-3 bg-primary/10 rounded-full">
+<span class="material-icons text-primary">verified_user</span>
+</div>
+<div>
+<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Cumplimiento Seguridad</h4>
+<p class="text-lg font-bold text-gray-900 dark:text-white">98.5%</p>
+</div>
+</div>
+</div>
+</div>
+<footer class="mt-8 border-t border-gray-200 dark:border-gray-800 pt-6 pb-2">
+<p class="text-center text-xs text-gray-500 dark:text-gray-400">
+                    © 2023 ITAM Pro Dashboard. Todos los derechos reservados. v2.4.1
+                </p>
+</footer>
+</div>
+</main>
+</body></html>

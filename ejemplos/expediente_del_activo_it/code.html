@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Expediente del Activo IT - ITAM Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "surface-dark": "#1a2234",
+                        "surface-light": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for dark mode feeling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #101622;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3748;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a5568;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 font-display min-h-screen flex flex-col">
+<!-- Navigation Bar -->
+<nav class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md">
+<div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16">
+<div class="flex items-center gap-4">
+<div class="flex-shrink-0 flex items-center gap-2 cursor-pointer">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white">
+<span class="material-icons text-xl">dns</span>
+</div>
+<span class="font-bold text-lg tracking-tight">Nexus<span class="text-primary">ITAM</span></span>
+</div>
+<div class="hidden md:flex ml-10 space-x-1">
+<a class="px-3 py-2 rounded-md text-sm font-medium text-slate-500 hover:text-primary dark:hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="px-3 py-2 rounded-md text-sm font-medium text-primary bg-primary/10 dark:bg-primary/20" href="#">Inventario</a>
+<a class="px-3 py-2 rounded-md text-sm font-medium text-slate-500 hover:text-primary dark:hover:text-primary transition-colors" href="#">Proyectos</a>
+<a class="px-3 py-2 rounded-md text-sm font-medium text-slate-500 hover:text-primary dark:hover:text-primary transition-colors" href="#">Informes</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons text-slate-400 text-sm">search</span>
+</span>
+<input class="block w-full pl-10 pr-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-md leading-5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm" placeholder="Buscar activo, tag o usuario..." type="text"/>
+</div>
+<button class="p-1 rounded-full text-slate-500 hover:text-primary focus:outline-none">
+<span class="material-icons">notifications</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-background-dark">
+                        JS
+                    </div>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-8xl mx-auto w-full">
+<!-- Breadcrumb & Header -->
+<div class="mb-8">
+<nav aria-label="Breadcrumb" class="flex mb-4">
+<ol class="flex items-center space-x-2">
+<li><a class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm" href="#">Inventario</a></li>
+<li><span class="text-slate-400 text-sm">/</span></li>
+<li><a class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm" href="#">Hardware</a></li>
+<li><span class="text-slate-400 text-sm">/</span></li>
+<li aria-current="page" class="text-slate-900 dark:text-white font-medium text-sm">IT-2024-882</li>
+</ol>
+</nav>
+<div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-20 h-20 rounded-lg bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 p-2 flex items-center justify-center flex-shrink-0 shadow-sm">
+<img alt="MacBook Pro Laptop Device" class="w-full h-full object-contain" data-alt="Silver laptop computer viewed from front angle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCN6lRNXO4IuA1Ng66EXpp3FBgcdEpoqxwDlbw6akhgfTlI4Lv2I9r_wiCdMu7tiSus-onJcvXmXds3UMMLhy93gUSPlJ8ftz4EOJFulu8jqrIc16KDpuECNBBkoRKQgipcC3oA6zrZ6fKfOIyX99ZUn6uxDJQ28o1PWUBOOHXP1265NukPi3juKhylFzvAi3R47MGH-jIPIIG5WkKx-ivrSvy3sYEeEax6F_WPhGzQ79NIXcgxnJG8CFAGk8d7vLMCDQIgWuMFu7Pn"/>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white">MacBook Pro 16" (M2 Max)</h1>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                                Activo
+                            </span>
+</div>
+<div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
+<span class="flex items-center gap-1"><span class="material-icons text-base">qr_code</span> TAG: IT-2024-882</span>
+<span class="flex items-center gap-1"><span class="material-icons text-base">fingerprint</span> S/N: C02XJ9L2K1</span>
+<span class="flex items-center gap-1"><span class="material-icons text-base">category</span> Categoría: Laptop / Workstation</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none transition-colors">
+<span class="material-icons text-lg mr-2">build</span>
+                        Reportar Avería
+                    </button>
+<button class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all shadow-primary/25 dark:shadow-primary/10">
+<span class="material-icons text-lg mr-2">autorenew</span>
+                        Solicitar Cambio
+                    </button>
+</div>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column: Details & Map (8 cols) -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<!-- Key Stats Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Vida Útil Restante</div>
+<div class="flex items-end justify-between">
+<div class="text-2xl font-bold text-slate-900 dark:text-white">72%</div>
+<div class="text-xs text-emerald-500 font-medium mb-1">Buen Estado</div>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 mt-2">
+<div class="bg-primary h-1.5 rounded-full" style="width: 72%"></div>
+</div>
+</div>
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Garantía</div>
+<div class="flex items-end justify-between">
+<div class="text-2xl font-bold text-slate-900 dark:text-white">342 <span class="text-sm font-normal text-slate-500">días</span></div>
+<div class="text-xs text-primary font-medium mb-1">AppleCare+</div>
+</div>
+<div class="text-xs text-slate-500 mt-2">Vence: 12 Oct, 2025</div>
+</div>
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Costo Mensual</div>
+<div class="flex items-end justify-between">
+<div class="text-2xl font-bold text-slate-900 dark:text-white">$45.00</div>
+<span class="material-icons text-slate-400 text-sm mb-1">info</span>
+</div>
+<div class="text-xs text-slate-500 mt-2">Depreciación lineal</div>
+</div>
+</div>
+<!-- Asset Details Tabs -->
+<div class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+<div class="border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between">
+<h3 class="text-lg font-semibold text-slate-900 dark:text-white">Especificaciones Técnicas</h3>
+<button class="text-primary text-sm font-medium hover:underline">Ver ficha completa</button>
+</div>
+<div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
+<div>
+<div class="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold mb-1">Procesador</div>
+<div class="text-slate-900 dark:text-slate-200 font-medium">Apple M2 Max (12-core CPU, 30-core GPU)</div>
+</div>
+<div>
+<div class="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold mb-1">Memoria RAM</div>
+<div class="text-slate-900 dark:text-slate-200 font-medium">32 GB Unified Memory</div>
+</div>
+<div>
+<div class="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold mb-1">Almacenamiento</div>
+<div class="text-slate-900 dark:text-slate-200 font-medium">1 TB SSD NVMe</div>
+</div>
+<div>
+<div class="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold mb-1">Sistema Operativo</div>
+<div class="text-slate-900 dark:text-slate-200 font-medium">macOS Sonoma 14.2</div>
+</div>
+<div>
+<div class="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold mb-1">Dirección MAC</div>
+<div class="text-slate-900 dark:text-slate-200 font-medium font-mono text-sm">a1:b2:c3:d4:e5:f6</div>
+</div>
+<div>
+<div class="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold mb-1">Última IP Conocida</div>
+<div class="text-slate-900 dark:text-slate-200 font-medium font-mono text-sm">192.168.1.105 (VPN)</div>
+</div>
+</div>
+</div>
+<!-- Location Map -->
+<div class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
+<div class="border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-icons text-primary">place</span>
+<h3 class="text-lg font-semibold text-slate-900 dark:text-white">Ubicación Física</h3>
+</div>
+<span class="text-xs font-medium px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Actualizado hace 2h</span>
+</div>
+<div class="relative h-64 w-full bg-slate-100 dark:bg-slate-900 group">
+<!-- Map Placeholder with gradient -->
+<div class="absolute inset-0 bg-cover bg-center opacity-60 dark:opacity-40" data-alt="Abstract blue map graphic showing building floorplan" data-location="Madrid Office Floor 3" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBlB59yMYzo-XADDrp5dphIw6cCe7SEeRw1YtCas4eIzRWUSCcClS3dA2Ft22QqjwWS1Kzqblmp7J5NCmstZbtWMmplrthluO6QPTCDG3o2DmaAEuw-8PQmgHLvAMou2yHbyloi_SHFy4iEku9ZCdYbYWcUpVVvrKCmRIW6mplSwaLKFGB0u2zjAJ__c8DLsAfgI8E7UqH7zzoQDJTfleqy4VVNcxcFN8Y54RbtpK98JrB8AU7HmU-cUxWjXhdZw0_ByEIkD_0th5Aw');">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-white dark:from-surface-dark to-transparent opacity-20"></div>
+<!-- Map Pin -->
+<div class="absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+<div class="relative flex items-center justify-center">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-white dark:border-surface-dark"></span>
+</div>
+<div class="mt-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold whitespace-nowrap">
+                                Edificio Central - Piso 3
+                            </div>
+</div>
+<!-- Location Detail Overlay -->
+<div class="absolute bottom-4 left-4 right-4 bg-white/90 dark:bg-surface-dark/90 backdrop-blur border border-slate-200 dark:border-slate-700 p-3 rounded-lg flex items-center justify-between">
+<div>
+<div class="text-xs text-slate-500 uppercase font-bold">Oficina</div>
+<div class="text-sm font-medium text-slate-900 dark:text-white">Madrid HQ - Zona Desarrollo</div>
+</div>
+<div class="text-right">
+<div class="text-xs text-slate-500 uppercase font-bold">Puesto</div>
+<div class="text-sm font-medium text-slate-900 dark:text-white">Escritorio 4B</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Timeline & Maintenance (4 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- Active User Card -->
+<div class="bg-gradient-to-br from-primary/10 to-transparent dark:from-primary/20 rounded-xl border border-primary/20 p-5">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-bold uppercase text-primary tracking-wide">Asignado A</h3>
+<span class="text-xs bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded border border-slate-200 dark:border-slate-700">Desde Ene 2024</span>
+</div>
+<div class="flex items-center gap-4">
+<img alt="Ana García" class="h-12 w-12 rounded-full object-cover ring-2 ring-primary/30" data-alt="Portrait of woman employee" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvrgyd9dw-MZdaa5AzOj70pRrDrm-WdrKRdXcFoWt0kkVVHLAnlnVMdwLnyo2FQbPpKZdFWtGZ6_DwGj-m5t-oJ5Z51ifJEjTODV0-VFDlfSzRua0ea18K4_oSGNt4KEMpd3YrgAr9HwNxUjdao2Gi6F8zNFweJJvQhISzW9mrIPmjBBi4fIQ2coTVtJJ7sYCdHE_2WOZq7yKfunWlKvg4R6QUUPMPUVKvBXqw9rIzKbot6y9_y8jiQd74yw09hL0T2R5kkHMlTC5s"/>
+<div>
+<div class="font-bold text-slate-900 dark:text-white text-lg">Ana García</div>
+<div class="text-sm text-slate-500 dark:text-slate-400">Senior UX Designer</div>
+<div class="text-xs text-primary mt-0.5">Proyecto Alpha</div>
+</div>
+</div>
+<div class="mt-4 pt-4 border-t border-primary/10 grid grid-cols-2 gap-2">
+<button class="flex items-center justify-center gap-2 py-2 text-xs font-medium bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors">
+<span class="material-icons text-sm">mail</span> Contactar
+                        </button>
+<button class="flex items-center justify-center gap-2 py-2 text-xs font-medium bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors">
+<span class="material-icons text-sm">history</span> Historial
+                        </button>
+</div>
+</div>
+<!-- Lifecycle Timeline -->
+<div class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex-grow">
+<div class="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h3 class="text-lg font-semibold text-slate-900 dark:text-white">Ciclo de Vida</h3>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons">filter_list</span>
+</button>
+</div>
+<div class="p-5">
+<ul class="relative border-l-2 border-slate-200 dark:border-slate-700 space-y-6 ml-3">
+<!-- Timeline Item: Current -->
+<li class="relative pl-6">
+<span class="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-primary ring-4 ring-white dark:ring-surface-dark"></span>
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-primary uppercase mb-0.5">Actualidad</span>
+<span class="text-sm font-medium text-slate-900 dark:text-white">Asignación de Activo</span>
+<span class="text-xs text-slate-500">Ana García • Diseño UX</span>
+</div>
+</li>
+<!-- Timeline Item: Maintenance -->
+<li class="relative pl-6">
+<span class="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-amber-400 ring-4 ring-white dark:ring-surface-dark"></span>
+<div class="flex flex-col group cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-slate-500 uppercase mb-0.5">15 Ene 2024</span>
+<span class="material-icons text-xs text-slate-400 group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100">open_in_new</span>
+</div>
+<span class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">Mantenimiento Preventivo</span>
+<span class="text-xs text-slate-500">Reemplazo de Batería (Ciclo 890)</span>
+</div>
+</li>
+<!-- Timeline Item: Return -->
+<li class="relative pl-6">
+<span class="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-slate-300 dark:bg-slate-600 ring-4 ring-white dark:ring-surface-dark"></span>
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-slate-500 uppercase mb-0.5">20 Dic 2023</span>
+<span class="text-sm font-medium text-slate-900 dark:text-white">Devolución de Activo</span>
+<span class="text-xs text-slate-500">Carlos Ruiz • Fin de Proyecto</span>
+<div class="mt-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[10px] text-slate-600 dark:text-slate-400 inline-block w-fit">
+                                        Estado: Bueno
+                                    </div>
+</div>
+</li>
+<!-- Timeline Item: Purchase -->
+<li class="relative pl-6">
+<span class="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-surface-dark"></span>
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-slate-500 uppercase mb-0.5">12 Oct 2023</span>
+<span class="text-sm font-medium text-slate-900 dark:text-white">Compra Registrada</span>
+<span class="text-xs text-slate-500">Orden PO-9921 • Apple Store</span>
+</div>
+</li>
+</ul>
+<button class="w-full mt-6 py-2 text-xs font-medium text-slate-500 hover:text-primary border border-dashed border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                            Ver historial completo
+                        </button>
+</div>
+</div>
+<!-- Maintenance Log (Compact) -->
+<div class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-icons text-amber-500 text-sm">build_circle</span>
+<h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase">Mantenimiento</h3>
+</div>
+</div>
+<div class="p-4">
+<div class="flex items-center justify-between mb-3 text-sm">
+<span class="text-slate-500">Próxima revisión:</span>
+<span class="font-medium text-slate-900 dark:text-white">15 Jun 2024</span>
+</div>
+<div class="flex items-center justify-between mb-4 text-sm">
+<span class="text-slate-500">Estado de Tickets:</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                Sin incidentes
+                            </span>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded border border-slate-100 dark:border-slate-700/50">
+<div class="flex items-start gap-3">
+<span class="material-icons text-slate-400 text-base mt-0.5">info</span>
+<div>
+<p class="text-xs text-slate-600 dark:text-slate-300">
+                                        Software update policy enforcement pending for macOS 14.3.
+                                    </p>
+<button class="text-primary text-xs font-medium mt-1 hover:underline">Apply Update</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Simple Footer -->
+<footer class="border-t border-slate-200 dark:border-slate-800 mt-auto bg-white dark:bg-surface-dark">
+<div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500">
+<div>
+                © 2024 NexusIT Asset Management. All rights reserved.
+            </div>
+<div class="flex gap-4 mt-2 md:mt-0">
+<a class="hover:text-primary" href="#">Privacy Policy</a>
+<a class="hover:text-primary" href="#">Terms of Service</a>
+<a class="hover:text-primary" href="#">Support</a>
+</div>
+</div>
+</footer>
+</body></html>

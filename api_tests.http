@@ -1,0 +1,47 @@
+@baseUrl = http://localhost:4000/api
+@adminEmail = admin@assetcore.local
+@adminPassword = admin123
+
+###
+# Login (admin)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+###
+# NOTE:
+# Copia el token de la respuesta de login y pegalo aqui:
+@token = REPLACE_WITH_BEARER_TOKEN
+
+###
+# Listar activos
+GET {{baseUrl}}/assets
+Authorization: Bearer {{token}}
+
+###
+# Crear ticket
+POST {{baseUrl}}/tickets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Ticket de prueba desde api_tests.http",
+  "description": "Prueba rapida de creacion de ticket desde REST Client",
+  "priority": "MEDIUM",
+  "assetId": 1
+}
+
+###
+# Simular webhook (Caso A)
+POST {{baseUrl}}/webhooks/incoming
+Content-Type: application/json
+
+{
+  "From": "whatsapp:+5215551110001",
+  "Body": "AST-DEMO001 presenta falla critica en pantalla."
+}
+
