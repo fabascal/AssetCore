@@ -274,41 +274,41 @@ export const TicketForm = ({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border-light dark:border-border-dark px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-lighter transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-outline-variant px-3 py-2 text-xs font-medium text-on-surface-variant hover:bg-surface-container-high transition"
           >
             <ArrowLeft size={14} />
             Volver
           </button>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-xl font-bold text-on-surface">
             Nuevo Ticket
           </h2>
         </div>
 
         <form
           onSubmit={handleCreate}
-          className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-6 shadow-card"
+          className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-6 shadow-card"
         >
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 md:col-span-2">
+            <label className="block text-xs font-medium text-on-surface-variant md:col-span-2">
               Titulo
               <input
                 value={form.title}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, title: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
+                className="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
                 required
               />
             </label>
 
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-medium text-on-surface-variant">
               Activo
               <select
                 value={form.assetId}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, assetId: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
+                className="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
                 required
               >
                 <option value="">Seleccionar activo...</option>
@@ -320,7 +320,7 @@ export const TicketForm = ({
               </select>
             </label>
 
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-medium text-on-surface-variant">
               Prioridad
               <select
                 value={form.priority}
@@ -330,7 +330,7 @@ export const TicketForm = ({
                     priority: e.target.value as TicketPriority,
                   }))
                 }
-                className="mt-1 w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
+                className="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
               >
                 <option value="LOW">Baja</option>
                 <option value="MEDIUM">Media</option>
@@ -339,14 +339,14 @@ export const TicketForm = ({
               </select>
             </label>
 
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 md:col-span-2">
+            <label className="block text-xs font-medium text-on-surface-variant md:col-span-2">
               Tema de soporte
               <select
                 value={form.supportTopicId}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, supportTopicId: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
+                className="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
                 required={topics.length > 0}
               >
                 <option value="">Seleccionar...</option>
@@ -358,7 +358,7 @@ export const TicketForm = ({
               </select>
             </label>
 
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 md:col-span-2">
+            <label className="block text-xs font-medium text-on-surface-variant md:col-span-2">
               Descripcion
               <textarea
                 rows={5}
@@ -366,7 +366,7 @@ export const TicketForm = ({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, description: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
+                className="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
                 required
               />
             </label>
@@ -376,7 +376,7 @@ export const TicketForm = ({
             <button
               type="button"
               onClick={onBack}
-              className="rounded-xl border border-border-light dark:border-border-dark px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-lighter transition"
+              className="rounded-xl border border-outline-variant px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-high transition"
             >
               Cancelar
             </button>
@@ -397,8 +397,8 @@ export const TicketForm = ({
   // ── Detail mode ──
   if (loading) {
     return (
-      <section className="rounded-xl border border-border-light dark:border-border-dark bg-white/90 dark:bg-surface-dark p-8">
-        <span className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+      <section className="rounded-xl border border-outline-variant bg-surface-container-lowest/90 p-8">
+        <span className="inline-flex items-center gap-2 text-sm text-on-surface-variant">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           Cargando ticket...
         </span>
@@ -411,7 +411,7 @@ export const TicketForm = ({
       <section className="space-y-4">
         <button
           onClick={onBack}
-          className="rounded-md border border-border-light dark:border-border-dark px-3 py-2 text-xs text-slate-700 dark:text-slate-200"
+          className="rounded-md border border-outline-variant px-3 py-2 text-xs text-on-surface-variant"
         >
           ← Volver
         </button>
@@ -435,12 +435,12 @@ export const TicketForm = ({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border-light dark:border-border-dark px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-lighter transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-outline-variant px-3 py-2 text-xs font-medium text-on-surface-variant hover:bg-surface-container-high transition"
           >
             <ArrowLeft size={14} />
             Volver
           </button>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-xl font-bold text-on-surface">
             Ticket #{ticket.id}
           </h2>
           <span
@@ -487,7 +487,7 @@ export const TicketForm = ({
               <button
                 type="button"
                 onClick={() => runTransition("CANCELLED")}
-                className="rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-surface-lighter"
+                className="rounded-md border border-outline-variant px-3 py-1.5 text-xs text-on-surface-variant hover:bg-surface-container-high"
               >
                 Cancelar
               </button>
@@ -509,11 +509,11 @@ export const TicketForm = ({
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
           {/* Title + Description */}
-          <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-5 shadow-card">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+          <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5 shadow-card">
+            <h3 className="text-lg font-semibold text-on-surface">
               {ticket.title}
             </h3>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">
+            <p className="mt-2 whitespace-pre-wrap text-sm text-on-surface-variant">
               {ticket.description}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
@@ -523,26 +523,26 @@ export const TicketForm = ({
                 </span>
               )}
               {ticket.asset && (
-                <span className="rounded bg-slate-100 dark:bg-slate-700 px-2 py-1 text-slate-600 dark:text-slate-300">
+                <span className="rounded bg-surface-container-high px-2 py-1 text-on-surface-variant">
                   Activo: {ticket.asset.assetCode} - {ticket.asset.brand}{" "}
                   {ticket.asset.model}
                 </span>
               )}
               {ticket.assignedTo && (
-                <span className="rounded bg-slate-100 dark:bg-slate-700 px-2 py-1 text-slate-600 dark:text-slate-300">
+                <span className="rounded bg-surface-container-high px-2 py-1 text-on-surface-variant">
                   Asignado: {ticket.assignedTo.fullName}
                 </span>
               )}
-              <span className="rounded bg-slate-100 dark:bg-slate-700 px-2 py-1 text-slate-600 dark:text-slate-300">
+              <span className="rounded bg-surface-container-high px-2 py-1 text-on-surface-variant">
                 Creado: {new Date(ticket.createdAt).toLocaleString()}
               </span>
             </div>
           </div>
 
           {/* Attachments */}
-          <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-5 shadow-card">
+          <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5 shadow-card">
             <div className="flex items-center justify-between">
-              <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-on-surface">
                 <Paperclip size={15} className="text-primary" />
                 Adjuntos ({attachments.length})
               </h4>
@@ -575,7 +575,7 @@ export const TicketForm = ({
                     href={`/api/tickets/attachments/${att.id}/download`}
                     target="_blank"
                     rel="noreferrer"
-                    className="group rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-slate-50 dark:hover:bg-surface-lighter/50 transition"
+                    className="group rounded-lg border border-outline-variant p-3 hover:bg-surface-container-high transition"
                   >
                     {att.mimeType.startsWith("image/") ? (
                       <img
@@ -584,11 +584,11 @@ export const TicketForm = ({
                         className="mb-2 h-28 w-full rounded object-cover"
                       />
                     ) : (
-                      <div className="mb-2 flex h-28 items-center justify-center rounded bg-slate-100 dark:bg-background-dark text-slate-400">
+                      <div className="mb-2 flex h-28 items-center justify-center rounded bg-surface-container-low text-slate-400">
                         PDF
                       </div>
                     )}
-                    <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary">
+                    <p className="truncate text-xs font-medium text-on-surface-variant group-hover:text-primary">
                       {att.originalName}
                     </p>
                     <p className="text-[10px] text-slate-500">
@@ -600,15 +600,15 @@ export const TicketForm = ({
                 ))}
               </div>
             ) : (
-              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-3 text-xs text-on-surface-variant">
                 Sin archivos adjuntos.
               </p>
             )}
           </div>
 
           {/* Comments / Conversation */}
-          <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-5 shadow-card">
-            <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+          <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5 shadow-card">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-on-surface">
               <MessageSquare size={15} className="text-primary" />
               Conversacion ({comments.length})
             </h4>
@@ -617,21 +617,21 @@ export const TicketForm = ({
               {comments.map((c: TicketComment) => (
                 <div
                   key={c.id}
-                  className="rounded-lg border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-3"
+                  className="rounded-lg border border-outline-variant bg-surface-container-low p-3"
                 >
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                    <span className="font-medium text-slate-700 dark:text-slate-200">
+                  <div className="flex items-center justify-between text-[11px] text-on-surface-variant">
+                    <span className="font-medium text-on-surface-variant">
                       {c.author?.fullName ?? "Sistema"}
                     </span>
                     <span>{new Date(c.createdAt).toLocaleString()}</span>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface-variant">
                     {c.body}
                   </p>
                 </div>
               ))}
               {comments.length === 0 && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-on-surface-variant">
                   Sin comentarios aun. Las conversaciones futuras via WhatsApp
                   con IA apareceran aqui.
                 </p>
@@ -651,7 +651,7 @@ export const TicketForm = ({
                     }
                   }}
                   placeholder="Escribe un comentario..."
-                  className="flex-1 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+                  className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
                 />
                 <button
                   type="button"
@@ -669,8 +669,8 @@ export const TicketForm = ({
 
         {/* Right sidebar - Timeline */}
         <div className="space-y-4">
-          <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-5 shadow-card">
-            <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+          <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5 shadow-card">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-on-surface">
               <Clock size={15} className="text-primary" />
               Linea de tiempo
             </h4>
@@ -681,7 +681,7 @@ export const TicketForm = ({
                   <p className="text-xs font-medium text-slate-800 dark:text-slate-200">
                     {eventActionLabel[event.action] ?? event.action}
                   </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-on-surface-variant">
                     {event.actor?.fullName ?? "Sistema"} &middot;{" "}
                     {new Date(event.createdAt).toLocaleString()}
                   </p>
@@ -694,8 +694,8 @@ export const TicketForm = ({
           </div>
 
           {/* Quick info */}
-          <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-5 shadow-card space-y-3">
-            <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+          <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5 shadow-card space-y-3">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-on-surface">
               <Info size={15} className="text-primary" />
               Informacion
             </h4>
@@ -718,19 +718,19 @@ export const TicketForm = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Tema</span>
-                <span className="text-slate-700 dark:text-slate-200">
+                <span className="text-on-surface-variant">
                   {ticket.supportTopic?.name ?? "Sin tema"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Activo</span>
-                <span className="text-slate-700 dark:text-slate-200">
+                <span className="text-on-surface-variant">
                   {ticket.asset?.assetCode ?? "-"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Asignado</span>
-                <span className="text-slate-700 dark:text-slate-200">
+                <span className="text-on-surface-variant">
                   {ticket.assignedTo?.fullName ?? "Sin asignar"}
                 </span>
               </div>
@@ -753,7 +753,7 @@ export const TicketForm = ({
                       <select
                         value={selectedUserId}
                         onChange={(e) => setSelectedUserId(e.target.value)}
-                        className="w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-2 py-1.5 text-xs text-slate-900 dark:text-slate-100"
+                        className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-2 py-1.5 text-xs text-slate-900 dark:text-slate-100"
                       >
                         <option value="">Sin asignar</option>
                         {users.map((u) => (
@@ -774,7 +774,7 @@ export const TicketForm = ({
                         <button
                           type="button"
                           onClick={() => setShowReassign(false)}
-                          className="flex-1 rounded-md border border-border-light dark:border-border-dark px-2 py-1 text-[11px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-surface-lighter"
+                          className="flex-1 rounded-md border border-outline-variant px-2 py-1 text-[11px] text-on-surface-variant hover:bg-surface-container-high"
                         >
                           Cancelar
                         </button>
@@ -785,7 +785,7 @@ export const TicketForm = ({
               )}
               <div className="flex justify-between">
                 <span className="text-slate-500">Creado</span>
-                <span className="text-slate-700 dark:text-slate-200">
+                <span className="text-on-surface-variant">
                   {new Date(ticket.createdAt).toLocaleDateString()}
                 </span>
               </div>

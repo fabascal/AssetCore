@@ -82,13 +82,6 @@ CREATE TABLE IF NOT EXISTS role_permissions (
   PRIMARY KEY (role_id, permission_id)
 );
 
-CREATE TABLE IF NOT EXISTS role_menus (
-  role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-  menu_id INTEGER NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (role_id, menu_id)
-);
-
 CREATE TABLE IF NOT EXISTS menus (
   id SERIAL PRIMARY KEY,
   label VARCHAR(120) NOT NULL,
@@ -100,6 +93,13 @@ CREATE TABLE IF NOT EXISTS menus (
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS role_menus (
+  role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  menu_id INTEGER NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (role_id, menu_id)
 );
 
 CREATE TABLE IF NOT EXISTS assets (
@@ -242,17 +242,6 @@ JOIN permissions p ON p.code IN ('dashboard.read', 'menus.read', 'assets.read', 
 WHERE r.name = 'tech'
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
-INSERT INTO users (full_name, email, password_hash, role_id)
-SELECT 'Admin AssetCore', 'admin@assetcore.local', '$2a$10$0YKwc7MNfJOuRdtbaWEQvu14exlnitWInLgLUbq5abYDHNecZgm/e', r.id
-FROM roles r
-WHERE r.name = 'admin'
-ON CONFLICT (email) DO NOTHING;
-
-INSERT INTO users (full_name, email, password_hash, role_id)
-SELECT 'Tecnico Nivel 1', 'tecnico.n1@assetcore.local', '$2a$10$0YKwc7MNfJOuRdtbaWEQvuIbwjthdD7JyddKsoSpgJBF/yMHkNScG', r.id
-FROM roles r
-WHERE r.name = 'tech'
-ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO sla_policies (name, description, priority, level, escalation_hours_level_1_to_2, escalation_hours_level_2_to_provider, auto_escalate)
 VALUES
@@ -327,10 +316,9 @@ VALUES
   ('Falla de correo', 'Problemas de envio, recepcion o acceso a correo institucional.', TRUE)
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO support_topic_levels (topic_id, level_order, level_name, escalation_target, tech_user_id)
-SELECT t.id, 1, 'Agente Tech', 'TECH', u.id
+INSERT INTO support_topic_levels (topic_id, level_order, level_name, escalation_target)
+SELECT t.id, 1, 'Agente Tech', 'TECH'
 FROM support_topics t
-LEFT JOIN users u ON u.email = 'tecnico.n1@assetcore.local'
 WHERE t.name = 'Falla de internet'
   AND NOT EXISTS (
     SELECT 1
@@ -338,8 +326,8 @@ WHERE t.name = 'Falla de internet'
     WHERE l.topic_id = t.id AND l.level_order = 1
   );
 
-INSERT INTO support_topic_levels (topic_id, level_order, level_name, escalation_target, tech_user_id)
-SELECT t.id, 2, 'Proveedor ISP', 'PROVIDER', NULL
+INSERT INTO support_topic_levels (topic_id, level_order, level_name, escalation_target)
+SELECT t.id, 2, 'Proveedor ISP', 'PROVIDER'
 FROM support_topics t
 WHERE t.name = 'Falla de internet'
   AND NOT EXISTS (
@@ -348,10 +336,9 @@ WHERE t.name = 'Falla de internet'
     WHERE l.topic_id = t.id AND l.level_order = 2
   );
 
-INSERT INTO support_topic_levels (topic_id, level_order, level_name, escalation_target, tech_user_id)
-SELECT t.id, 1, 'Mesa de Ayuda TI', 'TECH', u.id
+INSERT INTO support_topic_levels (topic_id, level_order, level_name, escalation_target)
+SELECT t.id, 1, 'Mesa de Ayuda TI', 'TECH'
 FROM support_topics t
-LEFT JOIN users u ON u.email = 'tecnico.n1@assetcore.local'
 WHERE t.name = 'Falla de correo'
   AND NOT EXISTS (
     SELECT 1
@@ -359,8 +346,8 @@ WHERE t.name = 'Falla de correo'
     WHERE l.topic_id = t.id AND l.level_order = 1
   );
 
-INSERT INTO support_topic_levels (topic_id, level_order, level_name, escalation_target, tech_user_id)
-SELECT t.id, 2, 'Proveedor de Correo', 'PROVIDER', NULL
+INSERT INTO support_topic_levels (topic_id, level_order, level_name, escalation_target)
+SELECT t.id, 2, 'Proveedor de Correo', 'PROVIDER'
 FROM support_topics t
 WHERE t.name = 'Falla de correo'
   AND NOT EXISTS (
@@ -369,45 +356,5 @@ WHERE t.name = 'Falla de correo'
     WHERE l.topic_id = t.id AND l.level_order = 2
   );
 
-INSERT INTO assets (asset_code, brand, model, serial_number, status, specifications)
-VALUES
-  ('AST-DEMO001', 'Dell', 'Latitude 7420', 'SN-DELL-7420-001', 'ASSIGNED', '{"CPU":"Intel i7","RAM":"16GB","Almacenamiento":"512GB SSD"}'),
-  ('AST-DEMO002', 'HP', 'EliteBook 840', 'SN-HP-840-002', 'AVAILABLE', '{"CPU":"Intel i5","RAM":"8GB","Almacenamiento":"256GB SSD"}'),
-  ('AST-DEMO003', 'Cisco', 'Catalyst 9200', 'SN-CISCO-9200-003', 'MAINTENANCE', '{"Puertos":"48","Firmware":"17.9","Rol":"Core Switch"}'),
-  ('AST-DEMO004', 'Dell', 'PowerEdge R740', 'SN-DELL-R740-004', 'ASSIGNED', '{"CPU":"2x Xeon Silver","RAM":"64GB","Storage":"4x 1TB SSD RAID10"}'),
-  ('AST-DEMO005', 'HP', 'ProLiant DL380', 'SN-HP-DL380-005', 'AVAILABLE', '{"CPU":"Xeon Gold","RAM":"128GB","Storage":"2x 2TB NVMe"}')
-ON CONFLICT (asset_code) DO NOTHING;
-
-INSERT INTO tickets (title, description, status, priority, level, assigned_to_id, asset_id)
-SELECT
-  'Pantalla con parpadeo intermitente',
-  'El usuario reporta flickering en monitor externo al conectar via docking.',
-  'OPEN',
-  'HIGH',
-  '1',
-  u.id,
-  a.id
-FROM users u
-JOIN assets a ON a.asset_code = 'AST-DEMO001'
-WHERE u.email = 'tecnico.n1@assetcore.local'
-ON CONFLICT DO NOTHING;
-
-UPDATE tickets
-SET support_topic_id = (
-  SELECT id FROM support_topics WHERE name = 'Falla de internet' LIMIT 1
-)
-WHERE support_topic_id IS NULL
-  AND title = 'Pantalla con parpadeo intermitente';
-
-INSERT INTO ticket_events (ticket_id, actor_user_id, action, details)
-SELECT
-  t.id,
-  u.id,
-  'CREATED',
-  jsonb_build_object('status', t.status, 'level', t.level, 'note', 'Ticket inicial de seed')
-FROM tickets t
-JOIN users u ON u.email = 'tecnico.n1@assetcore.local'
-WHERE t.title = 'Pantalla con parpadeo intermitente'
-ON CONFLICT DO NOTHING;
 
 COMMIT;

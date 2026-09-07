@@ -1,4 +1,7 @@
 import { prisma } from "../../shared/prisma";
+import { buildLocationPathMap } from "../../shared/location.utils";
+import { buildAssetDepreciation } from "../depreciation/depreciation.service";
+import { roundMoney } from "../../shared/depreciation.utils";
 
 /* ─── Reporte 1: Inventario General de Activos ─── */
 
@@ -11,10 +14,10 @@ export const getAssetsInventoryReport = async (filters: {
   const where: Record<string, unknown> = {};
   if (filters.locationId) where.locationId = filters.locationId;
   if (filters.status) where.status = filters.status;
-  if (filters.deviceType) where.deviceType = filters.deviceType;
+  if (filters.deviceType) where.assetType = { name: filters.deviceType };
   if (filters.brand) where.brand = filters.brand;
 
-  const [assets, totals, byStatus, byType, byBrand, byLocation] = await Promise.all([
+  const [assets, totals, byStatus, byTypeRaw, byBrand, byLocation] = await Promise.all([
     prisma.asset.findMany({
       where,
       select: {
@@ -41,26 +44,33 @@ export const getAssetsInventoryReport = async (filters: {
     }),
     prisma.asset.count({ where }),
     prisma.asset.groupBy({ by: ["status"], where, _count: { _all: true } }),
-    prisma.asset.groupBy({ by: ["assetTypeId"], where, _count: { _all: true } }),
+    prisma.asset.groupBy({ by: ["assetTypeId"], where, _count: { _all: true } }).then(async (rows) => {
+      const ids = rows.map((r) => r.assetTypeId).filter((id): id is number => id !== null);
+      const types = ids.length > 0 ? await prisma.assetType.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } }) : [];
+      const typeMap = new Map(types.map((t) => [t.id, t.name]));
+      return rows.map((r) => ({ type: r.assetTypeId ? (typeMap.get(r.assetTypeId) ?? "Sin tipo") : "Sin tipo", count: typeof r._count === "object" ? (r._count._all ?? 0) : 0 }));
+    }),
     prisma.asset.groupBy({ by: ["brand"], where, _count: { _all: true }, orderBy: { brand: "asc" }, take: 20 }),
     prisma.asset.groupBy({ by: ["locationId"], where, _count: { _all: true } }),
   ]);
 
   // Resolver nombres de ubicaciones
   const locationIds = byLocation.map((r) => r.locationId).filter((id): id is number => id !== null);
-  const locations = locationIds.length > 0
-    ? await prisma.location.findMany({
-        where: { id: { in: locationIds } },
-        select: { id: true, name: true, parent: { select: { name: true } } },
-      })
-    : [];
-  const locationMap = new Map(locations.map((l) => [l.id, l.parent ? `${l.parent.name} > ${l.name}` : l.name]));
+  const allLocations = await prisma.location.findMany({ select: { id: true, name: true, parentId: true } });
+  const locationPaths = buildLocationPathMap(allLocations);
+  const locationMap = new Map(
+    locationIds.map((id) => [id, locationPaths.get(id) ?? "Desconocida"]),
+  );
 
   return {
     total: totals,
-    assets,
+    assets: assets.map((a) => ({
+      ...a,
+      deviceType: (a.assetType as { name?: string } | null)?.name ?? "",
+      locationPath: a.location?.id ? locationPaths.get(a.location.id) ?? null : null,
+    })),
     byStatus: byStatus.map((r) => ({ status: r.status, count: typeof r._count === "object" ? (r._count._all ?? 0) : 0 })),
-    byType: byType.map((r) => ({ assetTypeId: r.assetTypeId, count: typeof r._count === "object" ? (r._count._all ?? 0) : 0 })),
+    byType: byTypeRaw,
     byBrand: byBrand.map((r) => ({ brand: r.brand, count: typeof r._count === "object" ? (r._count._all ?? 0) : 0 })),
     byLocation: byLocation.map((r) => ({
       locationId: r.locationId,
@@ -114,11 +124,15 @@ export const getTicketsByZoneReport = async (filters: {
     orderBy: { createdAt: "desc" },
   });
 
+  const locationPaths = buildLocationPathMap(
+    await prisma.location.findMany({ select: { id: true, name: true, parentId: true } }),
+  );
+
   // Agrupar por ubicación
   const byZone: Record<string, typeof tickets> = {};
   for (const t of tickets) {
-    const locName = t.asset?.location
-      ? (t.asset.location.parent ? `${t.asset.location.parent.name} > ${t.asset.location.name}` : t.asset.location.name)
+    const locName = t.asset?.location?.id
+      ? locationPaths.get(t.asset.location.id) ?? t.asset.location.name
       : "Sin ubicación";
     (byZone[locName] ??= []).push(t);
   }
@@ -212,11 +226,14 @@ export const getAssetFailureHistory = async (assetId?: number) => {
   return { totalTickets: tickets.length, totalAssets: sorted.length, byAsset: sorted };
 };
 
-/* ─── Reporte 5: Depreciación / Trazabilidad Contable ─── */
+/* ─── Reporte 5: Depreciación LISR / Trazabilidad Contable ─── */
 
 export const getDepreciationReport = async () => {
   const assets = await prisma.asset.findMany({
-    where: { purchaseDate: { not: null } },
+    where: {
+      status: { not: "SCRAP" },
+      purchaseDate: { not: null },
+    },
     select: {
       id: true,
       assetCode: true,
@@ -224,12 +241,15 @@ export const getDepreciationReport = async () => {
       model: true,
       serialNumber: true,
       status: true,
-      assetType: { select: { id: true, name: true } },
       purchaseDate: true,
+      purchasePrice: true,
+      equipmentValue: true,
+      salvageValue: true,
       usefulLifeYears: true,
       endOfLifeDate: true,
       assignedToName: true,
-      location: { select: { id: true, name: true, parent: { select: { name: true } } } },
+      assetType: { select: { id: true, name: true, depreciationRate: true, usefulLifeYears: true } },
+      location: { select: { id: true, name: true, parentId: true, parent: { select: { name: true } } } },
       custodyDocs: {
         select: { id: true, assignedToName: true, assignedToDate: true, originalName: true, createdAt: true },
         orderBy: { createdAt: "desc" },
@@ -238,38 +258,55 @@ export const getDepreciationReport = async () => {
     orderBy: { purchaseDate: "asc" },
   });
 
-  const now = new Date();
-
   const enriched = assets.map((a) => {
-    const purchaseDate = a.purchaseDate!;
-    const usefulLife = a.usefulLifeYears ?? 5;
-    const totalMonths = usefulLife * 12;
-    const monthsElapsed = Math.max(0,
-      (now.getFullYear() - purchaseDate.getFullYear()) * 12 + (now.getMonth() - purchaseDate.getMonth())
-    );
-    const depreciationPercent = Math.min(100, Math.round((monthsElapsed / totalMonths) * 100));
-    const remainingPercent = Math.max(0, 100 - depreciationPercent);
-    const isFullyDepreciated = depreciationPercent >= 100;
+    const { depreciation, warnings } = buildAssetDepreciation({
+      ...a,
+      assetTypeId: a.assetType?.id ?? null,
+    });
 
     return {
       ...a,
-      usefulLifeYears: usefulLife,
-      monthsElapsed,
-      totalMonths,
-      depreciationPercent,
-      remainingPercent,
-      isFullyDepreciated,
+      deviceType: a.assetType?.name ?? "",
+      depreciation,
+      warnings,
+      depreciationPercent: depreciation?.depreciationPercent ?? 0,
+      remainingPercent: depreciation
+        ? roundMoney(Math.max(0, 100 - depreciation.depreciationPercent))
+        : 100,
+      isFullyDepreciated: depreciation?.isFullyDepreciated ?? false,
+      monthsElapsed: depreciation?.monthsElapsed ?? 0,
+      monthlyDepreciation: depreciation?.monthlyDepreciation ?? null,
+      accumulatedDepreciation: depreciation?.accumulatedDepreciation ?? null,
+      bookValue: depreciation?.bookValue ?? null,
+      depreciableBase: depreciation?.depreciableBase ?? null,
+      depreciationRatePercent: depreciation?.depreciationRatePercent ?? null,
+      monthsUntilFullyDepreciated: depreciation?.monthsUntilFullyDepreciated ?? null,
+      purchasePriceResolved: depreciation?.purchasePrice ?? null,
     };
   });
 
-  const totalAssets = enriched.length;
-  const fullyDepreciated = enriched.filter((a) => a.isFullyDepreciated).length;
-  const activeNotDepreciated = enriched.filter((a) => !a.isFullyDepreciated && a.status !== "SCRAP").length;
+  const withDepreciation = enriched.filter((a) => a.depreciation);
+  const fullyDepreciated = withDepreciation.filter((a) => a.isFullyDepreciated).length;
+  const activeNotDepreciated = withDepreciation.filter((a) => !a.isFullyDepreciated).length;
+
+  const totalOriginalValue = roundMoney(
+    withDepreciation.reduce((sum, a) => sum + (a.depreciation?.purchasePrice ?? 0), 0),
+  );
+  const totalBookValue = roundMoney(
+    withDepreciation.reduce((sum, a) => sum + (a.depreciation?.bookValue ?? 0), 0),
+  );
+  const totalAccumulatedDepreciation = roundMoney(
+    withDepreciation.reduce((sum, a) => sum + (a.depreciation?.accumulatedDepreciation ?? 0), 0),
+  );
 
   return {
-    total: totalAssets,
+    total: enriched.length,
+    withDepreciationData: withDepreciation.length,
     fullyDepreciated,
     activeNotDepreciated,
+    totalOriginalValue,
+    totalBookValue,
+    totalAccumulatedDepreciation,
     assets: enriched,
   };
 };
@@ -290,6 +327,10 @@ export const getScrapReport = async () => {
       endOfLifeDate: true,
       usefulLifeYears: true,
       assignedToName: true,
+      decommissionReason: true,
+      decommissionNotes: true,
+      decommissionedAt: true,
+      decommissionedBy: { select: { id: true, fullName: true, email: true } },
       updatedAt: true,
       location: { select: { id: true, name: true, parent: { select: { name: true } } } },
       custodyDocs: {
@@ -304,10 +345,15 @@ export const getScrapReport = async () => {
     orderBy: { updatedAt: "desc" },
   });
 
+  const locationPaths = buildLocationPathMap(
+    await prisma.location.findMany({ select: { id: true, name: true, parentId: true } }),
+  );
+
   return {
     total: assets.length,
     assets: assets.map((a) => ({
       ...a,
+      locationPath: a.location?.id ? locationPaths.get(a.location.id) ?? a.location.name : null,
       ticketCount: a.tickets.length,
       lastCustody: a.custodyDocs[0] ?? null,
     })),
@@ -320,7 +366,7 @@ export const getReportFilters = async () => {
   const [locations, brands, statuses, types] = await Promise.all([
     prisma.location.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, parent: { select: { name: true } } },
+      select: { id: true, name: true, parentId: true },
       orderBy: { name: "asc" },
     }),
     prisma.asset.groupBy({ by: ["brand"], orderBy: { brand: "asc" } }),
@@ -328,13 +374,18 @@ export const getReportFilters = async () => {
     prisma.assetType.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
+  const locationPaths = buildLocationPathMap(locations);
+
   return {
-    locations: locations.map((l) => ({
-      id: l.id,
-      name: l.parent ? `${l.parent.name} > ${l.name}` : l.name,
-    })),
+    locations: locations
+      .map((l) => ({
+        id: l.id,
+        name: locationPaths.get(l.id) ?? l.name,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "es")),
     brands: brands.map((b) => b.brand),
     statuses: statuses.map((s) => s.status),
     assetTypes: types.map((t) => ({ id: t.id, name: t.name })),
+    deviceTypes: types.map((t) => t.name),
   };
 };

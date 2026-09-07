@@ -1,9 +1,24 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, QrCode, Printer, TicketPlus, ChevronDown, ChevronUp, Play, Send, X as XIcon, RotateCcw, Cpu, Hash, Activity, Monitor, MapPin, HardDrive, MemoryStick, CalendarDays, AlertTriangle, UserCheck, FileText, Upload, Download, Trash2, Eye, ShieldCheck, Tag, Box } from "lucide-react";
-import { Asset, CustodyDocument, TicketPriority } from "../types";
+import { ArrowLeft, QrCode, Printer, TicketPlus, ChevronDown, ChevronUp, Play, Send, X as XIcon, RotateCcw, Cpu, Hash, Activity, Monitor, MapPin, HardDrive, MemoryStick, CalendarDays, AlertTriangle, UserCheck, FileText, Upload, Download, Trash2, Eye, ShieldCheck, Tag, Box, Layers } from "lucide-react";
+import { Asset, CustodyDocument, TicketPriority, assetStatusLabels, assetDecommissionReasonLabels, type AssetDecommissionReason } from "../types";
 import { api } from "../lib/api";
 import { PdfViewer } from "./PdfViewer";
-import { notify } from "../lib/toast";
+import { getApiErrorMessage, notify } from "../lib/toast";
+import { formatAssetLocation } from "../lib/locations";
+import {
+  AssetPanel,
+  AssetPageHeader,
+  AssetSection,
+  AssetStatusBadge,
+  DetailField,
+  DetailFieldGrid,
+  btnSecondary,
+  formatCurrencyMxn,
+  formatDateMx,
+  formatRam,
+  formatStorage,
+  hasTechnicalSpecs,
+} from "./assets/AssetUi";
 
 type CompanyInfo = {
   name: string;
@@ -22,6 +37,7 @@ type Props = {
   ticketTopics: Array<{ id: number; name: string }>;
   onBack: () => void;
   onRefreshAsset?: () => void;
+  onDecommissioned?: () => void;
   onCreateTicket: (payload: {
     title: string;
     description: string;
@@ -38,13 +54,17 @@ const levelLabel: Record<string, string> = {
   PROVEEDOR: "Proveedor",
 };
 
-export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefreshAsset, onCreateTicket, onTransitionTicket }: Props) => {
+export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefreshAsset, onDecommissioned, onCreateTicket, onTransitionTicket }: Props) => {
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TicketPriority>("MEDIUM");
   const [supportTopicId, setSupportTopicId] = useState("");
   const [uploadingCustody, setUploadingCustody] = useState(false);
+  const [markingAsScrap, setMarkingAsScrap] = useState(false);
+  const [showDecommissionModal, setShowDecommissionModal] = useState(false);
+  const [decommissionReason, setDecommissionReason] = useState<AssetDecommissionReason>("END_OF_LIFE");
+  const [decommissionNotes, setDecommissionNotes] = useState("");
   const [previewDocUrl, setPreviewDocUrl] = useState<string | null>(null);
   const [previewDocName, setPreviewDocName] = useState("");
   const custodyFileRef = useRef<HTMLInputElement>(null);
@@ -81,6 +101,42 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
     setDescription("");
     setPriority("MEDIUM");
     setSupportTopicId(ticketTopics[0] ? String(ticketTopics[0].id) : "");
+  };
+
+  const openDecommissionModal = () => {
+    setDecommissionReason("END_OF_LIFE");
+    setDecommissionNotes("");
+    setShowDecommissionModal(true);
+  };
+
+  const closeDecommissionModal = () => {
+    setShowDecommissionModal(false);
+    setDecommissionReason("END_OF_LIFE");
+    setDecommissionNotes("");
+  };
+
+  const submitDecommission = async (event: FormEvent) => {
+    event.preventDefault();
+
+    if (decommissionReason === "OTHER" && decommissionNotes.trim().length < 3) {
+      notify.warning("Activos", 'Describe el motivo cuando seleccionas "Otro".');
+      return;
+    }
+
+    setMarkingAsScrap(true);
+    try {
+      await api.post(`/assets/${asset.id}/decommission`, {
+        reason: decommissionReason,
+        notes: decommissionNotes.trim() || null,
+      });
+      notify.success("Activos", "Activo dado de baja correctamente.");
+      closeDecommissionModal();
+      onDecommissioned?.();
+    } catch (error) {
+      notify.error("Activos", getApiErrorMessage(error, "No fue posible dar de baja el activo."));
+    } finally {
+      setMarkingAsScrap(false);
+    }
   };
 
 
@@ -133,9 +189,7 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
     const assignDate = asset.assignedToDate
       ? new Date(asset.assignedToDate).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })
       : todayStr;
-    const locationStr = asset.location
-      ? (asset.location.parent ? `${asset.location.parent.name} \u2192 ` : "") + asset.location.name
-      : "";
+    const locationStr = formatAssetLocation(asset.location, asset.locationPath);
 
     // Fetch fresh company data at print time to guarantee the logo is available
     let co = company;
@@ -245,11 +299,11 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
     <section className="animate-fade-in space-y-6">
       {showModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <form onSubmit={submitTicket} className="w-full max-w-xl rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-6 transition-colors">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Levantar Ticket</h3>
+          <form onSubmit={submitTicket} className="w-full max-w-xl rounded-xl border border-outline-variant bg-surface-container-lowest p-6 transition-colors">
+            <h3 className="text-lg font-semibold text-on-surface">Levantar Ticket</h3>
             <div className="mt-4 space-y-3">
               <input
-                className="w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface"
                 placeholder="Titulo"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -257,14 +311,14 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
               />
               <textarea
                 rows={4}
-                className="w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface"
                 placeholder="Descripcion"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
               />
               <select
-                className="w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TicketPriority)}
               >
@@ -274,7 +328,7 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
                 <option value="CRITICAL">Critica</option>
               </select>
               <select
-                className="w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface"
                 value={supportTopicId}
                 onChange={(e) => setSupportTopicId(e.target.value)}
                 required={ticketTopics.length > 0}
@@ -291,7 +345,7 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
               <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white">
                 Crear Ticket
               </button>
-              <button type="button" onClick={() => setShowModal(false)} className="rounded-md border border-border-light dark:border-border-dark px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200">
+              <button type="button" onClick={() => setShowModal(false)} className="rounded-md border border-outline-variant px-3 py-1.5 text-sm text-on-surface">
                 Cancelar
               </button>
             </div>
@@ -299,106 +353,210 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-6 shadow-card transition-colors">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {asset.brand} {asset.model}
-          </h2>
-          <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 rounded-xl border border-border-light dark:border-border-dark px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-lighter transition">
-            <ArrowLeft size={14} />
-            Volver
-          </button>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><Hash size={13} /> Código</div>
-            <div className="mt-1 text-sm font-semibold text-primary">{asset.assetCode}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><Tag size={13} /> Marca</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.brand}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><Box size={13} /> Modelo</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.model}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><Cpu size={13} /> No. de Serie</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.serialNumber}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><ShieldCheck size={13} /> Valor del equipo</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">
-              {asset.equipmentValue !== null && asset.equipmentValue !== undefined
-                ? new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(asset.equipmentValue))
-                : "—"}
-            </div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><Monitor size={13} /> Tipo</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.assetType?.name ?? "—"}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><Activity size={13} /> Estado</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.status}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><MapPin size={13} /> Ubicación</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">
-              {asset.location
-                ? `${asset.location.parent ? asset.location.parent.name + " → " : ""}${asset.location.name}`
-                : "—"}
-            </div>
-          </div>
-          <div className={`rounded-xl border p-4 ${
-            asset.assignedToName
-              ? "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30"
-              : "border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark"
-          }`}>
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><UserCheck size={13} /> Responsable</div>
-            <div className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{asset.assignedToName ?? "Sin asignar"}</div>
-            {asset.assignedToDate && (
-              <div className="mt-0.5 text-[11px] text-slate-400">Desde: {new Date(asset.assignedToDate).toLocaleDateString("es-MX")}</div>
-            )}
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><Cpu size={13} /> Procesador</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.processor ?? "—"}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><MemoryStick size={13} /> RAM</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.ramGb ? `${asset.ramGb} GB` : "—"}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><HardDrive size={13} /> Almacenamiento</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.storageGb ? `${asset.storageGb} GB ${asset.storageType ?? ""}` : "—"}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><CalendarDays size={13} /> Fecha de compra</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("es-MX") : "—"}</div>
-          </div>
-          <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4">
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><ShieldCheck size={13} /> Garantía hasta</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{asset.warrantyEnd ? new Date(asset.warrantyEnd).toLocaleDateString("es-MX") : "—"}</div>
-          </div>
-          <div className={`rounded-xl border p-4 ${
-            asset.endOfLifeDate && new Date(asset.endOfLifeDate) <= new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-              ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30"
-              : "border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark"
-          }`}>
-            <div className="flex items-center gap-2 text-xs uppercase text-slate-500 dark:text-slate-500"><AlertTriangle size={13} /> Fin de vida</div>
-            <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">
-              {asset.endOfLifeDate ? new Date(asset.endOfLifeDate).toLocaleDateString("es-MX") : "—"}
-              {asset.usefulLifeYears ? ` (${asset.usefulLifeYears} años)` : ""}
-            </div>
-          </div>
-        </div>
+      {showDecommissionModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <form onSubmit={submitDecommission} className="w-full max-w-lg rounded-xl border border-outline-variant bg-surface-container-lowest p-6 transition-colors">
+            <h3 className="text-lg font-semibold text-on-surface">Dar de baja activo</h3>
+            <p className="mt-1 text-sm text-on-surface-variant">
+              {asset.assetCode} — {asset.brand} {asset.model}
+            </p>
+            <p className="mt-3 text-xs text-on-surface-variant">
+              Se quitará del inventario en circulación y quedará registrado quién, cuándo y por qué se dio de baja.
+            </p>
 
-      </div>
+            <div className="mt-4 space-y-3">
+              <label className="block text-xs text-on-surface-variant">
+                Motivo de baja
+                <select
+                  className="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface"
+                  value={decommissionReason}
+                  onChange={(e) => setDecommissionReason(e.target.value as AssetDecommissionReason)}
+                  required
+                >
+                  {(Object.entries(assetDecommissionReasonLabels) as [AssetDecommissionReason, string][]).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-xs text-on-surface-variant">
+                {decommissionReason === "OTHER" ? "Detalle del motivo" : "Notas adicionales (opcional)"}
+                <textarea
+                  rows={4}
+                  className="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface"
+                  placeholder={
+                    decommissionReason === "OTHER"
+                      ? "Describe por qué se da de baja este activo..."
+                      : "Información extra sobre la baja..."
+                  }
+                  value={decommissionNotes}
+                  onChange={(e) => setDecommissionNotes(e.target.value)}
+                  required={decommissionReason === "OTHER"}
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeDecommissionModal}
+                className="rounded-md border border-outline-variant px-3 py-2 text-xs text-on-surface"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={markingAsScrap}
+                className="rounded-md bg-rose-600 px-3 py-2 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-60"
+              >
+                {markingAsScrap ? "Procesando..." : "Confirmar baja"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      <AssetPanel>
+        <AssetPageHeader
+          icon={Monitor}
+          title={`${asset.brand} ${asset.model}`}
+          subtitle={asset.assetCode}
+          badge={<AssetStatusBadge status={asset.status} />}
+          actions={
+            <>
+              {asset.status !== "SCRAP" ? (
+                <button
+                  type="button"
+                  onClick={openDecommissionModal}
+                  disabled={markingAsScrap}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-error/30 bg-error-container/20 px-3 py-2 text-xs font-medium text-on-error-container transition-all duration-200 hover:bg-error-container/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/30 disabled:opacity-50"
+                >
+                  <Trash2 size={14} />
+                  Dar de baja
+                </button>
+              ) : null}
+              <button type="button" onClick={onBack} className={btnSecondary + " !py-2 !px-3 !text-xs"}>
+                <ArrowLeft size={14} />
+                Volver
+              </button>
+            </>
+          }
+        />
+
+        {asset.status === "SCRAP" ? (
+          <div className="mb-6 rounded-xl border border-error/30 bg-error-container/20 p-4">
+            <h3 className="text-sm font-semibold text-on-error-container">Registro de baja</h3>
+            <div className="mt-2 grid gap-2 text-sm text-on-surface md:grid-cols-2">
+              <p>
+                <span className="font-medium text-on-surface-variant">Motivo:</span>{" "}
+                {asset.decommissionReason ? assetDecommissionReasonLabels[asset.decommissionReason] : "—"}
+              </p>
+              <p>
+                <span className="font-medium text-on-surface-variant">Fecha:</span>{" "}
+                {asset.decommissionedAt ? new Date(asset.decommissionedAt).toLocaleString("es-MX") : "—"}
+              </p>
+              <p>
+                <span className="font-medium text-on-surface-variant">Registrado por:</span>{" "}
+                {asset.decommissionedBy?.fullName ?? "—"}
+              </p>
+              {asset.decommissionNotes ? (
+                <p className="md:col-span-2">
+                  <span className="font-medium text-on-surface-variant">Notas:</span> {asset.decommissionNotes}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="space-y-8">
+          <AssetSection title="Identificación" description="Datos principales del equipo." icon={Tag}>
+            <DetailFieldGrid cols={3}>
+              <DetailField label="Código" value={asset.assetCode} icon={Hash} mono highlight />
+              <DetailField label="Tipo" value={asset.assetType?.name ?? "—"} icon={Layers} />
+              <DetailField label="Estado" value={assetStatusLabels[asset.status]} icon={Activity} />
+              <DetailField label="Marca" value={asset.brand} icon={Tag} />
+              <DetailField label="Modelo" value={asset.model} icon={Box} />
+              <DetailField label="No. de serie" value={asset.serialNumber} icon={Cpu} mono />
+              <DetailField label="Valor del equipo (MOI)" value={formatCurrencyMxn(asset.purchasePrice ?? asset.equipmentValue)} icon={ShieldCheck} />
+              <DetailField label="Valor de rescate" value={formatCurrencyMxn(asset.salvageValue ?? 0)} icon={ShieldCheck} />
+              <DetailField
+                label="Ubicación"
+                value={formatAssetLocation(asset.location, asset.locationPath)}
+                icon={MapPin}
+                className="md:col-span-2"
+              />
+            </DetailFieldGrid>
+          </AssetSection>
+
+          <AssetSection title="Responsable" description="Asignación actual del equipo." icon={UserCheck}>
+            <DetailFieldGrid cols={2}>
+              <DetailField
+                label="Nombre"
+                value={asset.assignedToName ?? "Sin asignar"}
+                icon={UserCheck}
+                highlight={Boolean(asset.assignedToName)}
+              />
+              <DetailField
+                label="Fecha de asignación"
+                value={formatDateMx(asset.assignedToDate)}
+                icon={CalendarDays}
+              />
+            </DetailFieldGrid>
+          </AssetSection>
+
+          <AssetSection
+            title="Especificaciones técnicas"
+            description={
+              hasTechnicalSpecs(asset)
+                ? "Hardware registrado en catálogo ITAM."
+                : "Sin especificaciones — común en impresoras, switches u otros dispositivos."
+            }
+            icon={Cpu}
+          >
+            {hasTechnicalSpecs(asset) ? (
+              <DetailFieldGrid cols={3}>
+                <DetailField label="Procesador" value={asset.processor ?? "—"} icon={Cpu} />
+                <DetailField label="RAM" value={formatRam(asset.ramGb)} icon={MemoryStick} />
+                <DetailField
+                  label="Almacenamiento"
+                  value={formatStorage(asset.storageGb, asset.storageType)}
+                  icon={HardDrive}
+                />
+              </DetailFieldGrid>
+            ) : (
+              <p className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-4 py-6 text-center text-sm text-on-surface-variant">
+                Este activo no tiene procesador, RAM ni almacenamiento registrados.
+              </p>
+            )}
+          </AssetSection>
+
+          <AssetSection title="Ciclo de vida" description="Compra, garantía y fin de vida útil." icon={Layers}>
+            <DetailFieldGrid cols={4}>
+              <DetailField label="Fecha de compra" value={formatDateMx(asset.purchaseDate)} icon={CalendarDays} />
+              <DetailField label="Garantía hasta" value={formatDateMx(asset.warrantyEnd)} icon={ShieldCheck} />
+              <DetailField
+                label="Vida útil"
+                value={asset.usefulLifeYears ? `${asset.usefulLifeYears} años` : "—"}
+                icon={Activity}
+              />
+              <DetailField
+                label="Fin de vida"
+                value={formatDateMx(asset.endOfLifeDate)}
+                icon={AlertTriangle}
+                highlight={Boolean(
+                  asset.endOfLifeDate && new Date(asset.endOfLifeDate) <= new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                )}
+              />
+            </DetailFieldGrid>
+          </AssetSection>
+        </div>
+      </AssetPanel>
 
       {/* ── Documentos y acciones rápidas ── */}
-      <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-6 shadow-card transition-colors">
-        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white mb-4"><FileText size={18} className="text-primary" /> Documentos del Activo</h3>
+      <AssetPanel>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-on-surface mb-4"><FileText size={18} className="text-primary" /> Documentos del activo</h3>
 
         {/* Acciones */}
         <div className="flex flex-wrap gap-2 mb-4">
@@ -435,12 +593,12 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
         {asset.custodyDocs && asset.custodyDocs.length > 0 ? (
           <div className="space-y-2">
             {asset.custodyDocs.map((doc: CustodyDocument) => (
-              <div key={doc.id} className="flex items-center justify-between rounded-lg border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark px-4 py-3">
+              <div key={doc.id} className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-low px-4 py-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <FileText size={16} className="shrink-0 text-blue-500" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{doc.originalName}</p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-sm font-medium text-on-surface truncate">{doc.originalName}</p>
+                    <p className="text-[11px] text-on-surface-variant">
                       {doc.assignedToName} · {new Date(doc.createdAt).toLocaleDateString("es-MX")} · {(doc.sizeBytes / 1024).toFixed(0)} KB
                       {doc.uploadedBy ? ` · Subido por ${doc.uploadedBy.fullName}` : ""}
                     </p>
@@ -453,7 +611,7 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
                   }} className="rounded-lg border border-blue-200 dark:border-blue-800 p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition" title="Ver documento">
                     <Eye size={14} />
                   </button>
-                  <a href={`/api/assets/${asset.id}/custody-docs/${doc.id}/download`} target="_blank" rel="noreferrer" className="rounded-lg border border-border-light dark:border-border-dark p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-surface-lighter transition" title="Descargar">
+                  <a href={`/api/assets/${asset.id}/custody-docs/${doc.id}/download`} target="_blank" rel="noreferrer" className="rounded-lg border border-outline-variant p-1.5 text-on-surface-variant hover:bg-surface-container-high transition" title="Descargar">
                     <Download size={14} />
                   </a>
                   <button type="button" onClick={async () => {
@@ -469,24 +627,24 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-400 italic">No hay cartas responsivas almacenadas.</p>
+          <p className="text-sm text-on-surface-variant italic">No hay cartas responsivas almacenadas.</p>
         )}
-      </div>
+      </AssetPanel>
 
       {/* ── PDF Viewer Modal ── */}
       {previewDocUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setPreviewDocUrl(null)}>
-          <div className="relative flex flex-col w-full max-w-7xl h-[92vh] rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border-light dark:border-border-dark px-5 py-3 bg-slate-50 dark:bg-background-dark">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+          <div className="relative flex flex-col w-full max-w-7xl h-[92vh] rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-outline-variant px-5 py-3 bg-surface-container-low">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-on-surface truncate">
                 <FileText size={16} className="text-blue-500 shrink-0" />
                 {previewDocName}
               </h3>
               <div className="flex items-center gap-2 shrink-0">
-                <a href={previewDocUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border-light dark:border-border-dark px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-surface-lighter transition">
+                <a href={previewDocUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-outline-variant px-2.5 py-1 text-xs text-on-surface-variant hover:bg-surface-container-high transition">
                   <Download size={13} /> Descargar
                 </a>
-                <button type="button" onClick={() => setPreviewDocUrl(null)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-lighter hover:text-slate-600 dark:hover:text-slate-200 transition">
+                <button type="button" onClick={() => setPreviewDocUrl(null)} className="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-slate-600 dark:hover:text-slate-200 transition">
                   <XIcon size={16} />
                 </button>
               </div>
@@ -498,9 +656,9 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
         </div>
       )}
 
-      <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-6 shadow-card transition-colors">
+      <AssetPanel>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white"><TicketPlus size={18} className="text-primary" /> Historial de Tickets</h3>
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-on-surface"><TicketPlus size={18} className="text-primary" /> Historial de tickets</h3>
           <button
             type="button"
             onClick={() => {
@@ -516,18 +674,18 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
         <div className="space-y-3">
           {asset.tickets && asset.tickets.length > 0 ? (
             asset.tickets.map((ticket) => (
-              <article key={ticket.id} className={`rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-4 ${priorityClass[ticket.priority]}`}>
+              <article key={ticket.id} className={`rounded-xl border border-outline-variant bg-surface-container-low p-4 ${priorityClass[ticket.priority]}`}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{ticket.title}</h4>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{ticket.description}</p>
+                    <h4 className="text-sm font-semibold text-on-surface">{ticket.title}</h4>
+                    <p className="mt-1 text-xs text-on-surface-variant">{ticket.description}</p>
                   </div>
                   <span className="inline-flex items-center rounded-lg bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary">{ticket.status}</span>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-600 dark:text-slate-300">
-                  <span className="rounded bg-slate-200 dark:bg-surface-lighter px-2 py-1">Prioridad: {ticket.priority}</span>
-                  <span className="rounded bg-slate-200 dark:bg-surface-lighter px-2 py-1">Escalacion: {levelLabel[ticket.level] ?? ticket.level}</span>
-                  <span className="rounded bg-slate-200 dark:bg-surface-lighter px-2 py-1">
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-on-surface-variant">
+                  <span className="rounded bg-surface-container-high px-2 py-1">Prioridad: {ticket.priority}</span>
+                  <span className="rounded bg-surface-container-high px-2 py-1">Escalacion: {levelLabel[ticket.level] ?? ticket.level}</span>
+                  <span className="rounded bg-surface-container-high px-2 py-1">
                     Asignado: {ticket.assignedTo?.fullName ?? "Sin asignar"}
                   </span>
                 </div>
@@ -536,7 +694,7 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
                     <button
                       type="button"
                       onClick={() => onTransitionTicket(ticket.id, "IN_PROGRESS")}
-                      className="rounded border border-border-light dark:border-border-dark px-2 py-1 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-lighter"
+                      className="rounded border border-outline-variant px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container-high"
                     >
                       En Proceso
                     </button>
@@ -555,14 +713,14 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
                       <button
                         type="button"
                         onClick={() => onTransitionTicket(ticket.id, "CLOSED")}
-                        className="rounded border border-border-light dark:border-border-dark px-2 py-1 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-lighter"
+                        className="rounded border border-outline-variant px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container-high"
                       >
                         Cerrar
                       </button>
                       <button
                         type="button"
                         onClick={() => onTransitionTicket(ticket.id, "CANCELLED")}
-                        className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-100 dark:hover:bg-surface-lighter"
+                        className="rounded border border-outline-variant px-2 py-1 text-[11px] text-on-surface-variant hover:bg-surface-container-high"
                       >
                         Cancelar
                       </button>
@@ -578,14 +736,14 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
                     </button>
                   )}
                 </div>
-                <div className="mt-4 rounded border border-border-light dark:border-border-dark bg-white/70 dark:bg-surface-dark/70 p-3 transition-colors">
-                  <h5 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">Linea de Tiempo</h5>
-                  <ol className="space-y-2 border-l border-border-light dark:border-border-dark pl-3">
+                <div className="mt-4 rounded border border-outline-variant bg-white/70 dark:bg-surface-dark/70 p-3 transition-colors">
+                  <h5 className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Linea de Tiempo</h5>
+                  <ol className="space-y-2 border-l border-outline-variant pl-3">
                     {ticket.events?.map((event) => (
                       <li key={event.id} className="relative">
                         <span className="absolute -left-[18px] top-1 h-2 w-2 rounded-full bg-primary" />
-                        <p className="text-xs text-slate-700 dark:text-slate-200">{event.action}</p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-500">
+                        <p className="text-xs text-on-surface">{event.action}</p>
+                        <p className="text-[11px] text-on-surface-variant">
                           {event.actor?.fullName ?? "Sistema"} - {new Date(event.createdAt).toLocaleString()}
                         </p>
                       </li>
@@ -595,10 +753,10 @@ export const AssetDetail = ({ asset, qrImageUrl, ticketTopics, onBack, onRefresh
               </article>
             ))
           ) : (
-            <p className="text-sm text-slate-500 dark:text-slate-400">Este activo no tiene tickets registrados.</p>
+            <p className="text-sm text-on-surface-variant">Este activo no tiene tickets registrados.</p>
           )}
         </div>
-      </div>
+      </AssetPanel>
     </section>
   );
 };

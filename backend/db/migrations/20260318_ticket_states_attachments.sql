@@ -9,8 +9,17 @@ COMMIT;
 -- Enum value additions must be committed before being used
 BEGIN;
 
--- Migrate existing ESCALATED tickets to PROVIDER
-UPDATE tickets SET status = 'PROVIDER' WHERE status = 'ESCALATED';
+-- Migrate existing ESCALATED tickets to PROVIDER (only if ESCALATED was ever in the enum)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON e.enumtypid = t.oid
+    WHERE t.typname = 'ticket_status' AND e.enumlabel = 'ESCALATED'
+  ) THEN
+    UPDATE tickets SET status = 'PROVIDER' WHERE status::text = 'ESCALATED';
+  END IF;
+END $$;
 
 -- Create ticket_attachments table
 CREATE TABLE IF NOT EXISTS ticket_attachments (

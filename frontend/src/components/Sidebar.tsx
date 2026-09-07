@@ -116,7 +116,7 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
             <LucideIcons.Box size={18} />
           </div>
           {!collapsed && (
-            <span className="font-display text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+            <span className="font-display text-lg font-bold text-on-surface tracking-tight">
               AssetCore
             </span>
           )}
@@ -170,8 +170,8 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
                   className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150
                     ${
                       isActive
-                        ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-light"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-surface-lighter/50 dark:hover:text-white"
+                        ? "bg-primary-container text-on-primary-container"
+                        : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
                     }
                     ${collapsed ? "justify-center" : ""}
                   `}
@@ -180,8 +180,8 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
                     size={18}
                     className={`shrink-0 transition-colors ${
                       isActive
-                        ? "text-primary dark:text-primary-light"
-                        : "text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300"
+                        ? "text-primary"
+                        : "text-on-surface-variant/70 group-hover:text-on-surface-variant"
                     }`}
                   />
                   {!collapsed && (
@@ -190,7 +190,7 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
                       {hasChildren && (
                         <LucideIcons.ChevronDown
                           size={14}
-                          className={`shrink-0 text-slate-400 transition-transform duration-200 ${
+                          className={`shrink-0 text-on-surface-variant transition-transform duration-200 ${
                             isExpanded ? "rotate-180" : ""
                           }`}
                         />
@@ -201,7 +201,7 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
 
                 {/* Children submenu - expanded mode */}
                 {hasChildren && isExpanded && !collapsed && (
-                  <ul className="mt-1 ml-4 space-y-0.5 border-l-2 border-slate-200 pl-3 dark:border-border-dark animate-fade-in">
+                  <ul className="mt-1 ml-4 space-y-0.5 border-l-2 border-outline-variant pl-3 animate-fade-in">
                     {menu.children.map((child) => {
                       const ChildIcon = resolveIcon(child.icon);
                       const siblingPaths = menu.children.filter((s) => s.id !== child.id).map((s) => s.path);
@@ -219,12 +219,12 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
                             className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-all duration-150
                               ${
                                 isChildActive
-                                  ? "bg-primary/10 font-medium text-primary dark:bg-primary/15 dark:text-primary-light"
-                                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-surface-lighter/40 dark:hover:text-slate-200"
+                                  ? "bg-primary-container font-medium text-on-primary-container"
+                                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
                               }
                             `}
                           >
-                            <ChildIcon size={15} className={isChildActive ? "text-primary dark:text-primary-light" : "text-slate-400 dark:text-slate-500"} />
+                            <ChildIcon size={15} className={isChildActive ? "text-primary" : "text-on-surface-variant/70"} />
                             <span className="truncate">{child.label}</span>
                           </button>
                         </li>
@@ -236,7 +236,7 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
                 {/* Flyout popover - collapsed mode */}
                 {collapsed && hasChildren && isHovered && (
                   <div
-                    className="absolute left-full top-0 z-50 ml-2 min-w-[180px] rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark shadow-lg animate-fade-in"
+                    className="absolute left-full top-0 z-50 ml-2 min-w-[180px] rounded-xl border border-outline-variant bg-surface-container-lowest shadow-elevation-3 animate-fade-in"
                     onMouseEnter={() => {
                       if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
                       setHoveredMenu(menu.id);
@@ -245,7 +245,7 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
                       hoverTimeout.current = setTimeout(() => setHoveredMenu(null), 150);
                     }}
                   >
-                    <p className="px-3 pt-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <p className="px-3 pt-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       {menu.label}
                     </p>
                     <ul className="py-1 px-1.5">
@@ -265,12 +265,12 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
                               className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-all duration-150
                                 ${
                                   isChildActive
-                                    ? "bg-primary/10 font-medium text-primary dark:bg-primary/15 dark:text-primary-light"
-                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-surface-lighter/40 dark:hover:text-white"
+                                    ? "bg-primary-container font-medium text-on-primary-container"
+                                    : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
                                 }
                               `}
                             >
-                              <ChildIcon size={15} className={isChildActive ? "text-primary dark:text-primary-light" : "text-slate-400 dark:text-slate-500"} />
+                              <ChildIcon size={15} className={isChildActive ? "text-primary" : "text-on-surface-variant/70"} />
                               <span className="truncate">{child.label}</span>
                             </button>
                           </li>
@@ -286,14 +286,14 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
       </nav>
 
       {/* User section at bottom */}
-      <div className="border-t border-slate-200 dark:border-border-dark p-3">
+      <div className="border-t border-outline-variant p-3">
         <button
           type="button"
           onClick={onOpenPreferences}
-          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100 dark:hover:bg-surface-lighter/50 ${collapsed ? "justify-center" : ""}`}
+          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-surface-container-high ${collapsed ? "justify-center" : ""}`}
         >
           {avatarUrl ? (
-            <img src={avatarUrl} alt="Avatar" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-surface-dark" />
+            <img src={avatarUrl} alt="Avatar" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-surface-container-lowest" />
           ) : (
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-[11px] font-bold text-white">
               {userInitials || "U"}
@@ -301,8 +301,8 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
           )}
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{user.fullName}</p>
-              <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{user.roleName}</p>
+              <p className="truncate text-sm font-medium text-on-surface">{user.fullName}</p>
+              <p className="truncate text-[11px] text-on-surface-variant">{user.roleName}</p>
             </div>
           )}
         </button>
@@ -324,7 +324,7 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
       {/* Desktop Sidebar */}
       <aside
         ref={sidebarRef}
-        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-slate-200 bg-white dark:border-border-dark dark:bg-surface-dark transition-all duration-300 lg:flex ${
+        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-outline-variant bg-surface-container-lowest transition-all duration-300 lg:flex ${
           collapsed ? "w-[68px] overflow-visible" : "w-64"
         }`}
       >
@@ -333,7 +333,7 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="absolute -right-3 top-8 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm hover:text-slate-600 dark:border-border-dark dark:bg-surface-dark dark:text-slate-500 dark:hover:text-slate-300 transition"
+          className="absolute -right-3 top-8 flex h-6 w-6 items-center justify-center rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant shadow-sm hover:text-on-surface transition focus-ring"
         >
           {collapsed ? <LucideIcons.ChevronRight size={12} /> : <LucideIcons.ChevronLeft size={12} />}
         </button>
@@ -341,7 +341,7 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
 
       {/* Top bar (mobile + breadcrumb) */}
       <header
-        className={`sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-lg dark:border-border-dark dark:bg-surface-dark/80 transition-all duration-300 ${
+        className={`sticky top-0 z-30 border-b border-outline-variant bg-surface-container-lowest/80 backdrop-blur-lg transition-all duration-300 ${
           collapsed ? "lg:pl-[68px]" : "lg:pl-64"
         }`}
       >
@@ -350,20 +350,20 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-surface-lighter dark:hover:text-white lg:hidden"
+            className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface lg:hidden focus-ring"
           >
             <LucideIcons.Menu size={20} />
           </button>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-semibold text-slate-800 dark:text-white">{pageTitle}</h1>
+            <h1 className="text-base font-semibold text-on-surface">{pageTitle}</h1>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
               onClick={onOpenPreferences}
-              className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-surface-lighter transition lg:hidden"
+              className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-surface-container-high transition lg:hidden focus-ring"
             >
               {avatarUrl ? (
                 <img src={avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
@@ -380,8 +380,8 @@ export const Sidebar = ({ menus, currentRoute, onNavigate, onOpenPreferences, us
       {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden animate-fade-in">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-72 bg-white dark:bg-surface-dark shadow-xl animate-slide-in">
+          <div className="absolute inset-0 bg-scrim/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-72 bg-surface-container-lowest shadow-elevation-3 animate-slide-in">
             {sidebarContent}
           </aside>
         </div>

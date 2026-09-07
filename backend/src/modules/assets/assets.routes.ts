@@ -1,10 +1,13 @@
 import { Router } from "express";
+import { bulkImportRateLimiter } from "../../middlewares/rate-limit.middleware";
 import { checkPermission } from "../../middlewares/permission.middleware";
 import {
   createAssetHandler,
   deleteAssetHandler,
   getAssetHandler,
+  getAssetDepreciationHandler,
   getAssetQrHandler,
+  decommissionAssetHandler,
   lifecycleReportHandler,
   listAssetsHandler,
   updateAssetHandler,
@@ -19,12 +22,14 @@ import {
 const assetsRouter = Router();
 
 assetsRouter.get("/", checkPermission("assets.read"), listAssetsHandler);
-assetsRouter.post("/bulk-import", checkPermission("assets.write"), bulkImportHandler);
+assetsRouter.post("/bulk-import", checkPermission("assets.write"), bulkImportRateLimiter, bulkImportHandler);
 assetsRouter.get("/lifecycle-report", checkPermission("assets.read"), lifecycleReportHandler);
+assetsRouter.get("/:id/depreciation", checkPermission("assets.read"), getAssetDepreciationHandler);
 assetsRouter.get("/:id", checkPermission("assets.read"), getAssetHandler);
 assetsRouter.get("/:id/qr", checkPermission("assets.read"), getAssetQrHandler);
 assetsRouter.post("/", checkPermission("assets.write"), createAssetHandler);
 assetsRouter.put("/:id", checkPermission("assets.write"), updateAssetHandler);
+assetsRouter.post("/:id/decommission", checkPermission("assets.write"), decommissionAssetHandler);
 assetsRouter.delete("/:id", checkPermission("assets.write"), deleteAssetHandler);
 
 /* Custody documents (cartas responsivas firmadas) */

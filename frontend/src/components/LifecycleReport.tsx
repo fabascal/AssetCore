@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, AlertTriangle, TrendingDown, Download } from "lucide-react";
 import { api } from "../lib/api";
+import { formatAssetLocation } from "../lib/locations";
 import { notify } from "../lib/toast";
 
 type ReportAsset = {
@@ -21,6 +22,7 @@ type ReportAsset = {
   endOfLifeDate: string | null;
   assignedToName: string | null;
   location: { id: number; name: string; parent?: { name: string } | null } | null;
+  locationPath?: string | null;
 };
 
 type ReportData = {
@@ -65,10 +67,7 @@ export const LifecycleReport = () => {
     };
     const header = ["Código","Marca","Modelo","No. Serie","Tipo","Estado","Procesador","RAM (GB)","Almacenamiento (GB)","Tipo Almacenamiento","Ubicación","Responsable","Fecha Compra","Garantía hasta","Vida Útil (años)","Fin de Vida"];
     const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString("es-MX") : "";
-    const locName = (a: ReportAsset) => {
-      if (!a.location) return "";
-      return a.location.parent ? `${a.location.parent.name} > ${a.location.name}` : a.location.name;
-    };
+    const locName = (a: ReportAsset & { locationPath?: string | null }) => formatAssetLocation(a.location, a.locationPath);
     const esc = (v: string | number | null | undefined) => {
       const s = String(v ?? "");
       return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
@@ -208,7 +207,7 @@ export const LifecycleReport = () => {
                             <td className="py-2 pr-4 font-semibold text-primary">{a.assetCode}</td>
                             <td className="py-2 pr-4 text-slate-500 dark:text-slate-400">{deviceTypeLabel[a.deviceType] ?? a.deviceType}</td>
                             <td className="py-2 pr-4 text-slate-700 dark:text-slate-200">{a.brand} {a.model}</td>
-                            <td className="py-2 pr-4 text-slate-500 dark:text-slate-400">{a.location?.name ?? "—"}</td>
+                            <td className="py-2 pr-4 text-slate-500 dark:text-slate-400">{formatAssetLocation(a.location, a.locationPath)}</td>
                             <td className="py-2 pr-4 text-slate-500 dark:text-slate-400">
                               {a.purchaseDate ? new Date(a.purchaseDate).toLocaleDateString("es-MX", { year: "numeric", month: "short" }) : "—"}
                             </td>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { prisma } from "../../shared/prisma";
+import { assertValidLocationParent, buildLocationPathMap } from "../../shared/location.utils";
 
 /* ─── Schemas ─── */
 
@@ -24,6 +25,12 @@ const modelSchema = z.object({
 
 const processorSchema = z.object({
   name: nameSchema,
+  generation: z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .transform((value) => (value ? value : null)),
   isActive: z.boolean().default(true),
 });
 
@@ -65,7 +72,12 @@ export const createLocation = async (payload: unknown) => {
 
 export const updateLocation = async (id: number, payload: unknown) => {
   const parsed = locationSchema.partial().parse(payload);
-  if (parsed.parentId === id) throw new Error("Una ubicacion no puede ser padre de si misma");
+  const rows = await prisma.location.findMany({ select: { id: true, name: true, parentId: true } });
+
+  if (parsed.parentId !== undefined) {
+    assertValidLocationParent(id, parsed.parentId ?? null, rows);
+  }
+
   return prisma.location.update({ where: { id }, data: parsed });
 };
 
@@ -128,7 +140,7 @@ export const deleteModel = async (id: number) =>
 /* ─── Processors ─── */
 
 export const listProcessors = () =>
-  prisma.catalogProcessor.findMany({ orderBy: { name: "asc" } });
+  prisma.catalogProcessor.findMany({ orderBy: [{ name: "asc" }, { generation: "asc" }] });
 
 export const createProcessor = async (payload: unknown) => {
   const parsed = processorSchema.parse(payload);
@@ -184,6 +196,7 @@ export const deleteStorage = async (id: number) =>
 const assetTypeSchema = z.object({
   name:           z.string().trim().min(1).max(120),
   usefulLifeYears: z.coerce.number().int().min(1).max(100),
+  depreciationRate: z.coerce.number().min(0.01).max(1).default(0.30),
   isActive:       z.boolean().default(true),
 });
 

@@ -5,16 +5,78 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "#4f6ef7", dark: "#3b5de7", light: "#6b8aff", 50: "#eef1ff" },
-        accent: { DEFAULT: "#8b5cf6", light: "#a78bfa" },
-        "background-light": "#f0f2f5",
-        "background-dark": "#0c111d",
-        "surface-light": "#f8f9fb",
-        "surface-dark": "#151c2c",
-        "surface-lighter": "#1e2842",
-        "border-dark": "#1e293b",
-        "border-light": "#e2e8f0",
-        "card-dark": "#171f30",
+        /* Material 3 semantic tokens (CSS custom properties) */
+        primary: {
+          DEFAULT: "var(--color-primary)",
+          dark: "var(--color-primary-dark)",
+          light: "var(--color-primary-light)",
+          50: "var(--color-primary-50)",
+        },
+        "on-primary": "var(--color-on-primary)",
+        "primary-container": "var(--color-primary-container)",
+        "on-primary-container": "var(--color-on-primary-container)",
+
+        secondary: {
+          DEFAULT: "var(--color-secondary)",
+        },
+        "on-secondary": "var(--color-on-secondary)",
+        "secondary-container": "var(--color-secondary-container)",
+        "on-secondary-container": "var(--color-on-secondary-container)",
+
+        tertiary: {
+          DEFAULT: "var(--color-tertiary)",
+        },
+        "on-tertiary": "var(--color-on-tertiary)",
+        "tertiary-container": "var(--color-tertiary-container)",
+        "on-tertiary-container": "var(--color-on-tertiary-container)",
+
+        error: {
+          DEFAULT: "var(--color-error)",
+        },
+        "on-error": "var(--color-on-error)",
+        "error-container": "var(--color-error-container)",
+        "on-error-container": "var(--color-on-error-container)",
+
+        surface: {
+          DEFAULT: "var(--color-surface)",
+          dim: "var(--color-surface-dim)",
+          bright: "var(--color-surface-bright)",
+        },
+        "surface-container-lowest": "var(--color-surface-container-lowest)",
+        "surface-container-low": "var(--color-surface-container-low)",
+        "surface-container": "var(--color-surface-container)",
+        "surface-container-high": "var(--color-surface-container-high)",
+        "surface-container-highest": "var(--color-surface-container-highest)",
+        "on-surface": "var(--color-on-surface)",
+        "on-surface-variant": "var(--color-on-surface-variant)",
+
+        outline: {
+          DEFAULT: "var(--color-outline)",
+          variant: "var(--color-outline-variant)",
+        },
+        background: {
+          DEFAULT: "var(--color-background)",
+        },
+        "on-background": "var(--color-on-background)",
+
+        "inverse-surface": "var(--color-inverse-surface)",
+        "inverse-on-surface": "var(--color-inverse-on-surface)",
+        "inverse-primary": "var(--color-inverse-primary)",
+        scrim: "var(--color-scrim)",
+
+        /* Backward-compatible aliases (migration period) */
+        accent: {
+          DEFAULT: "var(--color-tertiary)",
+          light: "var(--color-tertiary-container)",
+        },
+        "background-light": "var(--color-background)",
+        "background-dark": "var(--color-background)",
+        "surface-light": "var(--color-surface-container-low)",
+        "surface-dark": "var(--color-surface-container)",
+        "surface-lighter": "var(--color-surface-container-high)",
+        "border-dark": "var(--color-outline-variant)",
+        "border-light": "var(--color-outline-variant)",
+        "card-dark": "var(--color-surface-container-low)",
       },
       fontFamily: {
         display: ["Inter", "system-ui", "sans-serif"],
@@ -27,6 +89,9 @@ module.exports = {
         card: "0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)",
         "card-hover": "0 4px 12px 0 rgb(0 0 0 / 0.08)",
         glow: "0 0 24px -4px rgb(79 110 247 / 0.3)",
+        "elevation-1": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "elevation-2": "0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06)",
+        "elevation-3": "0 2px 6px 0 rgb(0 0 0 / 0.1), 0 1px 3px -1px rgb(0 0 0 / 0.08)",
       },
       animation: {
         "fade-in": "fadeIn 0.2s ease-out",

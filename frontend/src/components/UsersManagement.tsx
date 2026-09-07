@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, RefreshCw, UserPlus, ShieldPlus, Pencil, Trash2, Eye, Menu as MenuIcon, X } from "lucide-react";
+import { Search, Filter, RefreshCw, UserPlus, ShieldPlus, Pencil, Trash2, Eye, Menu as MenuIcon, Shield, X } from "lucide-react";
 import { api } from "../lib/api";
 import { getApiErrorMessage, notify } from "../lib/toast";
 
@@ -15,6 +15,37 @@ type RoleMenuItem = {
   path: string;
   parentId: number | null;
   displayOrder: number;
+};
+
+type RolePermissionItem = {
+  id: number;
+  code: string;
+  label: string;
+  description: string | null;
+};
+
+const permissionGroupKey = (code: string) => {
+  const parts = code.split(".");
+  if (parts.length <= 1) return code;
+  if (parts.length === 2) return parts[0];
+  return parts.slice(0, -1).join(".");
+};
+
+const permissionGroupLabel = (key: string) => {
+  const labels: Record<string, string> = {
+    dashboard: "Dashboard",
+    menus: "Navegación",
+    assets: "Activos",
+    "itam.config": "Configuración ITAM",
+    tickets: "Mesa de ayuda",
+    projects: "Proyectos",
+    reports: "Reportes",
+    "ai.logs": "Logs IA",
+    users: "Usuarios y roles",
+    "helpdesk.config": "Config. mesa de ayuda",
+    auth: "Autenticación",
+  };
+  return labels[key] ?? key;
 };
 
 type RoleFormState = {
@@ -90,6 +121,12 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
   const [editingRoleMenusFor, setEditingRoleMenusFor] = useState<RoleItem | null>(null);
   const [roleMenusCatalog, setRoleMenusCatalog] = useState<RoleMenuItem[]>([]);
   const [selectedRoleMenuIds, setSelectedRoleMenuIds] = useState<number[]>([]);
+  const [isRolePermissionsModalOpen, setIsRolePermissionsModalOpen] = useState(false);
+  const [rolePermissionsLoading, setRolePermissionsLoading] = useState(false);
+  const [savingRolePermissions, setSavingRolePermissions] = useState(false);
+  const [editingRolePermissionsFor, setEditingRolePermissionsFor] = useState<RoleItem | null>(null);
+  const [rolePermissionsCatalog, setRolePermissionsCatalog] = useState<RolePermissionItem[]>([]);
+  const [selectedRolePermissionIds, setSelectedRolePermissionIds] = useState<number[]>([]);
 
   const loadUsersAndRoles = async () => {
     setLoadingUsers(true);
@@ -111,9 +148,17 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
     try {
       const response = await api.get<{ user: UserDetail }>(`/users/${userId}`);
       setSelectedUser(response.data.user);
+    } catch (error) {
+      notify.error("Usuarios", getApiErrorMessage(error, "No fue posible cargar el detalle."));
+      throw error;
     } finally {
       setLoadingDetail(false);
     }
+  };
+
+  const selectUser = (user: UserSummary) => {
+    setSelectedUser({ ...user, updatedAt: user.createdAt });
+    loadUserDetail(user.id).catch(() => undefined);
   };
 
   useEffect(() => {
@@ -306,6 +351,77 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
     }
   };
 
+  const openRolePermissionsModal = async (role: RoleItem) => {
+    setEditingRolePermissionsFor(role);
+    setRolePermissionsLoading(true);
+    setIsRolePermissionsModalOpen(true);
+
+    try {
+      const response = await api.get<{
+        role: RoleItem;
+        permissions: RolePermissionItem[];
+        assignedPermissionIds: number[];
+      }>(`/users/roles/${role.id}/permissions`);
+
+      setRolePermissionsCatalog(response.data.permissions);
+      setSelectedRolePermissionIds(response.data.assignedPermissionIds);
+    } catch (error) {
+      notify.error("Roles", getApiErrorMessage(error, "No fue posible cargar permisos del rol."));
+      setIsRolePermissionsModalOpen(false);
+    } finally {
+      setRolePermissionsLoading(false);
+    }
+  };
+
+  const closeRolePermissionsModal = () => {
+    setIsRolePermissionsModalOpen(false);
+    setEditingRolePermissionsFor(null);
+    setRolePermissionsCatalog([]);
+    setSelectedRolePermissionIds([]);
+  };
+
+  const toggleRolePermission = (permissionId: number, checked: boolean) => {
+    setSelectedRolePermissionIds((prev) => {
+      if (checked) return Array.from(new Set([...prev, permissionId]));
+      return prev.filter((id) => id !== permissionId);
+    });
+  };
+
+  const saveRolePermissions = async () => {
+    if (!editingRolePermissionsFor) return;
+
+    setSavingRolePermissions(true);
+    try {
+      await api.put(`/users/roles/${editingRolePermissionsFor.id}/permissions`, {
+        permissionIds: selectedRolePermissionIds,
+      });
+      closeRolePermissionsModal();
+      notify.success("Roles", "Permisos del rol actualizados.");
+    } catch (error) {
+      notify.error("Roles", getApiErrorMessage(error, "No fue posible guardar permisos del rol."));
+    } finally {
+      setSavingRolePermissions(false);
+    }
+  };
+
+  const groupedPermissions = useMemo(() => {
+    const groups = new Map<string, RolePermissionItem[]>();
+    for (const permission of rolePermissionsCatalog) {
+      const key = permissionGroupKey(permission.code);
+      const current = groups.get(key) ?? [];
+      current.push(permission);
+      groups.set(key, current);
+    }
+
+    return Array.from(groups.entries())
+      .map(([key, items]) => ({
+        key,
+        label: permissionGroupLabel(key),
+        items: items.sort((a, b) => a.code.localeCompare(b.code, "es")),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  }, [rolePermissionsCatalog]);
+
   const submitUser = async () => {
     if (!formState.fullName.trim() || !formState.email.trim() || !formState.roleId) {
       notify.warning("Usuarios", "Completa nombre, correo y rol.");
@@ -421,13 +537,19 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
                       </button>
                       <button
                         type="button"
-                        onClick={() =>
-                          openRoleMenusModal(role)
-                        }
+                        onClick={() => openRoleMenusModal(role)}
                         className="inline-flex items-center gap-1 rounded-lg border border-border-light dark:border-border-dark px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-surface-lighter transition"
                       >
                         <MenuIcon size={13} />
                         Menus
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openRolePermissionsModal(role)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border-light dark:border-border-dark px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-surface-lighter transition"
+                      >
+                        <Shield size={13} />
+                        Permisos
                       </button>
                       <button
                         type="button"
@@ -509,7 +631,7 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
         </button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid items-start gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="overflow-hidden rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark shadow-card">
           <table className="min-w-full">
             <thead>
@@ -535,7 +657,13 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
 
               {!loadingUsers &&
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-surface-lighter/40">
+                  <tr
+                    key={user.id}
+                    onClick={() => selectUser(user)}
+                    className={`cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-surface-lighter/40 ${
+                      selectedUser?.id === user.id ? "bg-primary/5 dark:bg-primary/10" : ""
+                    }`}
+                  >
                     <td className="px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-slate-100">{user.fullName}</td>
                     <td className="px-4 py-3.5 text-sm text-slate-500 dark:text-slate-400">{user.email}</td>
                     <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">{user.role.name}</td>
@@ -554,7 +682,10 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
                       <div className="flex justify-end gap-1.5">
                         <button
                           type="button"
-                          onClick={() => loadUserDetail(user.id).catch(() => notify.error("Usuarios", "No fue posible cargar el detalle."))}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selectUser(user);
+                          }}
                           className="inline-flex items-center gap-1 rounded-lg border border-border-light dark:border-border-dark px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-surface-lighter transition"
                         >
                           <Eye size={13} />
@@ -562,7 +693,10 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
                         </button>
                         <button
                           type="button"
-                          onClick={() => openEditModal(user)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(user);
+                          }}
                           className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition"
                         >
                           <Pencil size={13} />
@@ -586,21 +720,18 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
 
         <aside className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-5 shadow-card">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Detalle de usuario</h3>
-          {loadingDetail ? (
-            <p className="mt-3 text-xs text-slate-400">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                Cargando detalle...
-              </span>
-            </p>
-          ) : null}
-
-          {!loadingDetail && !selectedUser ? (
+          {!selectedUser ? (
             <p className="mt-3 text-xs text-slate-400">Selecciona un usuario para ver sus datos.</p>
-          ) : null}
-
-          {!loadingDetail && selectedUser ? (
+          ) : (
             <div className="mt-4 space-y-3 text-xs text-slate-600 dark:text-slate-300">
+              {loadingDetail ? (
+                <p className="text-[11px] text-slate-400">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Actualizando detalle...
+                  </span>
+                </p>
+              ) : null}
               <div className="flex items-center gap-3 pb-3 border-b border-border-light dark:border-border-dark">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                   {selectedUser.fullName.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()}
@@ -624,7 +755,7 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
                 <span className="font-semibold text-slate-500 dark:text-slate-400">Actualizado:</span> {new Date(selectedUser.updatedAt).toLocaleString()}
               </p>
             </div>
-          ) : null}
+          )}
         </aside>
       </div>
 
@@ -832,6 +963,70 @@ export const UsersManagement = ({ section = "users" }: UsersManagementProps) => 
                 className="rounded-md bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary-dark disabled:opacity-60"
               >
                 {savingRoleMenus ? "Guardando..." : "Guardar menus"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isRolePermissionsModalOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+              Asignar permisos a rol: {editingRolePermissionsFor?.name}
+            </h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Controla qué acciones puede ejecutar el rol en la API (lectura, escritura, etc.).
+            </p>
+
+            {rolePermissionsLoading ? (
+              <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">Cargando permisos...</p>
+            ) : (
+              <div className="mt-4 max-h-[55vh] overflow-auto rounded-lg border border-border-light dark:border-border-dark p-3">
+                <div className="space-y-3">
+                  {groupedPermissions.map((group) => (
+                    <div key={group.key} className="rounded-md border border-border-light dark:border-border-dark p-3">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{group.label}</p>
+                      <div className="mt-2 space-y-1">
+                        {group.items.map((permission) => (
+                          <label
+                            key={permission.id}
+                            className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={selectedRolePermissionIds.includes(permission.id)}
+                              onChange={(e) => toggleRolePermission(permission.id, e.target.checked)}
+                            />
+                            <span>
+                              <span className="font-medium">{permission.label}</span>
+                              <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{permission.code}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeRolePermissionsModal}
+                className="rounded-md border border-border-light dark:border-border-dark px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-lighter"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={savingRolePermissions || rolePermissionsLoading}
+                onClick={saveRolePermissions}
+                className="rounded-md bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+              >
+                {savingRolePermissions ? "Guardando..." : "Guardar permisos"}
               </button>
             </div>
           </div>

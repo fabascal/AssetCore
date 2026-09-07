@@ -6,6 +6,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.prod
 
 # Build outputs
 dist/
@@ -30,6 +31,15 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Cursor IDE (workspace artifacts)
+projects/
+skills-cursor/
+rules/
+ide_state.json
+start.sh
+stop.sh
+.cursor/
 
 # Docker volumes / data
 postgres_data/

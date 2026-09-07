@@ -16,6 +16,15 @@ enum AssetStatus {
   @@map("asset_status")
 }
 
+enum AssetDecommissionReason {
+  END_OF_LIFE
+  DAMAGE
+  THEFT
+  OTHER
+
+  @@map("asset_decommission_reason")
+}
+
 enum DeviceType {
   LAPTOP
   DESKTOP
@@ -80,6 +89,7 @@ model User {
   refreshTokens  RefreshToken[]
   assignedTasks  ProjectTask[]  @relation("TaskAssignee")
   custodyUploads CustodyDocument[] @relation("CustodyUploader")
+  decommissionedAssets Asset[] @relation("AssetDecommissionedBy")
 
   @@map("users")
 }
@@ -245,10 +255,11 @@ model CatalogModel {
 }
 
 model CatalogProcessor {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
+  id         Int      @id @default(autoincrement())
+  name       String
+  generation String?
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@map("catalog_processors")
 }
@@ -280,6 +291,8 @@ model Asset {
   model          String
   serialNumber   String       @unique @map("serial_number")
   equipmentValue Float?       @map("equipment_value")
+  purchasePrice  Float?       @map("purchase_price")
+  salvageValue   Float         @default(0) @map("salvage_value")
   status         AssetStatus  @default(AVAILABLE)
   assetTypeId    Int?         @map("asset_type_id")
   assetType      AssetType?   @relation(fields: [assetTypeId], references: [id], onDelete: SetNull)
@@ -294,10 +307,15 @@ model Asset {
   locationId     Int?         @map("location_id")
   assignedToName String?      @map("assigned_to_name")
   assignedToDate DateTime?    @map("assigned_to_date")
+  decommissionReason   AssetDecommissionReason? @map("decommission_reason")
+  decommissionNotes    String?                  @map("decommission_notes")
+  decommissionedAt     DateTime?                @map("decommissioned_at")
+  decommissionedById   Int?                     @map("decommissioned_by_id")
   specifications Json         @default("{}")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
   location       Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  decommissionedBy User?      @relation("AssetDecommissionedBy", fields: [decommissionedById], references: [id], onDelete: SetNull)
   tickets        Ticket[]
   projectTasks   ProjectTask[]
   custodyDocs    CustodyDocument[]
@@ -526,6 +544,7 @@ model AssetType {
   id              Int      @id @default(autoincrement())
   name            String   @unique
   usefulLifeYears Int      @default(5) @map("useful_life_years")
+  depreciationRate Float   @default(0.30) @map("depreciation_rate")
   isActive        Boolean  @default(true) @map("is_active")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { prisma } from "../shared/prisma";
 import authRouter from "../modules/auth/auth.routes";
 import usersRouter from "../modules/users/users.routes";
 import assetsRouter from "../modules/assets/assets.routes";
@@ -16,8 +17,13 @@ import { checkPermission } from "../middlewares/permission.middleware";
 
 const apiRouter = Router();
 
-apiRouter.get("/health", (_req, res) => {
-  res.status(200).json({ status: "ok" });
+apiRouter.get("/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return res.status(200).json({ status: "ok", db: "ok" });
+  } catch {
+    return res.status(503).json({ status: "degraded", db: "error" });
+  }
 });
 
 apiRouter.use("/auth", authRouter);

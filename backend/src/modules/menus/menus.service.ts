@@ -57,6 +57,16 @@ export const getMenusByRole = async (roleId: number): Promise<MenuNode[]> => {
         roleMenus: {
           some: { roleId },
         },
+        OR: [
+          { requiredPermission: null },
+          {
+            permission: {
+              rolePermissions: {
+                some: { roleId },
+              },
+            },
+          },
+        ],
       },
       select: {
         id: true,

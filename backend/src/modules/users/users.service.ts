@@ -227,6 +227,10 @@ const roleMenuPayloadSchema = z.object({
   menuIds: z.array(z.coerce.number().int().positive()).default([]),
 });
 
+const rolePermissionPayloadSchema = z.object({
+  permissionIds: z.array(z.coerce.number().int().positive()).default([]),
+});
+
 export const getRoleMenuAssignments = async (roleId: number) => {
   const role = await prisma.role.findUnique({
     where: { id: roleId },
@@ -312,6 +316,71 @@ export const updateRoleMenuAssignments = async (roleId: number, payload: unknown
   });
 
   return { roleId, menuIds: Array.from(normalized) };
+};
+
+export const getRolePermissionAssignments = async (roleId: number) => {
+  const role = await prisma.role.findUnique({
+    where: { id: roleId },
+    select: { id: true, name: true, description: true },
+  });
+
+  if (!role) {
+    throw new Error("Rol no encontrado");
+  }
+
+  const permissions = await prisma.permission.findMany({
+    select: {
+      id: true,
+      code: true,
+      label: true,
+      description: true,
+    },
+    orderBy: [{ code: "asc" }],
+  });
+
+  const assigned = await prisma.rolePermission.findMany({
+    where: { roleId },
+    select: { permissionId: true },
+  });
+
+  return {
+    role,
+    permissions,
+    assignedPermissionIds: assigned.map((item) => item.permissionId),
+  };
+};
+
+export const updateRolePermissionAssignments = async (roleId: number, payload: unknown) => {
+  const role = await prisma.role.findUnique({ where: { id: roleId }, select: { id: true } });
+  if (!role) {
+    throw new Error("Rol no encontrado");
+  }
+
+  const parsed = rolePermissionPayloadSchema.parse(payload);
+
+  const availablePermissions = await prisma.permission.findMany({
+    select: { id: true },
+  });
+  const availableIds = new Set(availablePermissions.map((item) => item.id));
+
+  for (const permissionId of parsed.permissionIds) {
+    if (!availableIds.has(permissionId)) {
+      throw new Error(`Permiso invalido: ${permissionId}`);
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.rolePermission.deleteMany({ where: { roleId } });
+
+    if (parsed.permissionIds.length > 0) {
+      await tx.rolePermission.createMany({
+        data: parsed.permissionIds.map((permissionId) => ({ roleId, permissionId })),
+        skipDuplicates: true,
+      });
+    }
+  });
+
+  return { roleId, permissionIds: parsed.permissionIds };
 };
 
 const ensureRoleNameAvailable = async (name: string, currentRoleId?: number) => {

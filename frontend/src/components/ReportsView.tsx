@@ -4,6 +4,8 @@ import {
   Trash2, DollarSign, HardDrive, ChevronDown, ChevronRight, Search,
 } from "lucide-react";
 import { api } from "../lib/api";
+import { assetDecommissionReasonLabels } from "../types";
+import { formatAssetLocation } from "../lib/locations";
 import { notify } from "../lib/toast";
 
 /* ─── Types ─── */
@@ -48,17 +50,33 @@ type TicketRow = {
 };
 
 type DepreciationAsset = ReportAsset & {
-  monthsElapsed: number;
-  totalMonths: number;
+  assetType?: { id: number; name: string; depreciationRate?: number } | null;
   depreciationPercent: number;
   remainingPercent: number;
   isFullyDepreciated: boolean;
+  monthsElapsed: number;
+  bookValue?: number | null;
+  accumulatedDepreciation?: number | null;
+  monthlyDepreciation?: number | null;
+  depreciationRatePercent?: number | null;
+  purchasePriceResolved?: number | null;
+  monthsUntilFullyDepreciated?: number | null;
+  warnings?: string[];
   custodyDocs?: Array<{ id: number; assignedToName: string; originalName: string; createdAt: string }>;
 };
+
+const fmtMoney = (n: number | null | undefined) =>
+  n != null && !Number.isNaN(n)
+    ? new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n)
+    : "—";
 
 type ScrapAsset = ReportAsset & {
   ticketCount: number;
   updatedAt: string;
+  decommissionReason?: "END_OF_LIFE" | "DAMAGE" | "THEFT" | "OTHER" | null;
+  decommissionNotes?: string | null;
+  decommissionedAt?: string | null;
+  decommissionedBy?: { id: number; fullName: string; email?: string } | null;
   lastCustody?: { id: number; assignedToName: string; originalName: string } | null;
 };
 
@@ -112,8 +130,8 @@ const ticketStatusColor: Record<string, string> = {
 const fmtDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric" }) : "—";
 
-const locName = (a: { location?: { name: string; parent?: { name: string } | null } | null }) =>
-  a.location ? (a.location.parent ? `${a.location.parent.name} > ${a.location.name}` : a.location.name) : "—";
+const locName = (a: { location?: { id: number; name: string; parent?: { name: string } | null } | null; locationPath?: string | null }) =>
+  formatAssetLocation(a.location, a.locationPath);
 
 type ReportTab = "assets-inventory" | "depreciation" | "scrap" | "tickets-zone" | "tickets-tech" | "failure-history";
 
@@ -169,7 +187,7 @@ const EmptyState = ({ message }: { message: string }) => (
 
 const tabMeta: Record<ReportTab, { title: string; description: string; icon: typeof BarChart3; iconBg: string; iconColor: string }> = {
   "assets-inventory": { title: "Inventario General", description: "Total de activos con filtros por ubicación, estado, tipo y marca.", icon: HardDrive, iconBg: "bg-blue-100 dark:bg-blue-500/15", iconColor: "text-blue-600 dark:text-blue-400" },
-  "depreciation": { title: "Depreciación", description: "Trazabilidad contable: vida útil, porcentaje depreciado y documentos de custodia.", icon: DollarSign, iconBg: "bg-emerald-100 dark:bg-emerald-500/15", iconColor: "text-emerald-600 dark:text-emerald-400" },
+  "depreciation": { title: "Depreciación contable", description: "Valor en libros, depreciación acumulada y alertas de renovación.", icon: DollarSign, iconBg: "bg-emerald-100 dark:bg-emerald-500/15", iconColor: "text-emerald-600 dark:text-emerald-400" },
   "scrap": { title: "Activos en Baja", description: "Equipos dados de baja con historial de tickets y cartas responsivas.", icon: Trash2, iconBg: "bg-slate-200 dark:bg-slate-600/20", iconColor: "text-slate-600 dark:text-slate-400" },
   "tickets-zone": { title: "Tickets por Zona", description: "Tickets abiertos agrupados por ubicación del equipo.", icon: MapPin, iconBg: "bg-amber-100 dark:bg-amber-500/15", iconColor: "text-amber-600 dark:text-amber-400" },
   "tickets-tech": { title: "Tickets por Técnico", description: "Carga de trabajo por técnico asignado.", icon: UserCheck, iconBg: "bg-purple-100 dark:bg-purple-500/15", iconColor: "text-purple-600 dark:text-purple-400" },
@@ -224,8 +242,12 @@ export const ReportsView = ({ currentRoute, onViewAsset }: { currentRoute: strin
   // Depreciation
   const [depData, setDepData] = useState<{
     total: number;
+    withDepreciationData: number;
     fullyDepreciated: number;
     activeNotDepreciated: number;
+    totalOriginalValue: number;
+    totalBookValue: number;
+    totalAccumulatedDepreciation: number;
     assets: DepreciationAsset[];
   } | null>(null);
 
@@ -427,66 +449,140 @@ export const ReportsView = ({ currentRoute, onViewAsset }: { currentRoute: strin
     if (!depData) return <EmptyState message="No hay datos de depreciación." />;
 
     const exportDep = () => {
-      const headers = ["Código", "Marca", "Modelo", "No. Serie", "Tipo", "Estado", "Ubicación", "Fecha Compra", "Vida Útil (años)", "Meses Transcurridos", "Depreciación %", "Valor Residual %", "Totalmente Depreciado"];
+      const headers = [
+        "Código", "Marca", "Modelo", "No. Serie", "Tipo", "Estado", "Ubicación", "Fecha Compra",
+        "MOI", "Tasa anual %", "Meses", "Depreciación %", "Acumulada", "Valor en Libros", "Totalmente Depreciado",
+      ];
       const rows = depData.assets.map((a) => [
         a.assetCode, a.brand, a.model, a.serialNumber,
-        deviceTypeLabel[a.deviceType] ?? a.deviceType,
+        a.assetType?.name ?? a.deviceType ?? "",
         statusLabel[a.status] ?? a.status,
         locName(a), fmtDate(a.purchaseDate),
-        a.usefulLifeYears, a.monthsElapsed, a.depreciationPercent, a.remainingPercent,
+        a.purchasePriceResolved ?? "",
+        a.depreciationRatePercent ?? "",
+        a.monthsElapsed,
+        a.depreciationPercent,
+        a.accumulatedDepreciation ?? "",
+        a.bookValue ?? "",
         a.isFullyDepreciated ? "Sí" : "No",
       ]);
-      exportCsv("depreciacion_activos.csv", headers, rows);
+      exportCsv("depreciacion_contable.csv", headers, rows);
     };
+
+    const renewalAlerts = depData.assets.filter(
+      (a) =>
+        !a.isFullyDepreciated &&
+        a.monthsUntilFullyDepreciated != null &&
+        a.monthsUntilFullyDepreciated > 0 &&
+        a.monthsUntilFullyDepreciated <= 3,
+    );
 
     return (
       <>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <SummaryCard label="Total con Fecha de Compra" value={depData.total} color="text-slate-500 dark:text-slate-400" />
-          <SummaryCard label="Totalmente Depreciados" value={depData.fullyDepreciated} sub="requieren reemplazo" color="text-red-500 dark:text-red-400" />
-          <SummaryCard label="Activos sin Depreciar" value={depData.activeNotDepreciated} sub="en operación" color="text-emerald-500 dark:text-emerald-400" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SummaryCard label="MOI total inventario" value={fmtMoney(depData.totalOriginalValue)} color="text-slate-500 dark:text-slate-400" />
+          <SummaryCard label="Valor en libros" value={fmtMoney(depData.totalBookValue)} sub="activos vivos" color="text-emerald-600 dark:text-emerald-400" />
+          <SummaryCard label="Depreciación acumulada" value={fmtMoney(depData.totalAccumulatedDepreciation)} color="text-amber-600 dark:text-amber-400" />
+          <SummaryCard label="Totalmente depreciados" value={depData.fullyDepreciated} sub={`de ${depData.withDepreciationData} con datos`} color="text-red-500 dark:text-red-400" />
         </div>
+
+        {renewalAlerts.length > 0 && (
+          <div className="rounded-2xl border border-amber-300/60 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-950/20 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400" />
+              <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                Renovación próxima ({renewalAlerts.length})
+              </h4>
+              <span className="text-xs text-amber-700/80 dark:text-amber-300/80">Depreciación al 100% en ≤ 3 meses</span>
+            </div>
+            <div className="divide-y divide-amber-200/60 dark:divide-amber-500/20 rounded-xl border border-amber-200/60 dark:border-amber-500/20 bg-white/60 dark:bg-surface-dark/40 overflow-hidden">
+              {renewalAlerts.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => onViewAsset?.(a.id)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-amber-100/50 dark:hover:bg-amber-500/10"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-primary">{a.assetCode}</p>
+                    <p className="text-xs text-on-surface-variant">{a.brand} {a.model}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                      {a.monthsUntilFullyDepreciated === 1 ? "1 mes restante" : `${a.monthsUntilFullyDepreciated} meses restantes`}
+                    </p>
+                    <p className="text-xs text-on-surface-variant">En libros: {fmtMoney(a.bookValue)}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {depData.assets.length > 0 && (
           <div className="flex justify-end">
             <button onClick={exportDep} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition">
-              <Download size={14} className="inline mr-1 -mt-0.5" /> Exportar
+              <Download size={14} className="inline mr-1 -mt-0.5" /> Exportar CSV
             </button>
           </div>
         )}
 
-        <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark shadow-card overflow-x-auto">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-card overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-border-light dark:border-border-dark text-left text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <th className="p-3">Código</th><th className="p-3">Marca/Modelo</th><th className="p-3">Estado</th>
-                <th className="p-3">Ubicación</th><th className="p-3">Compra</th><th className="p-3">Vida Útil</th>
-                <th className="p-3">Depreciación</th><th className="p-3">Residual</th>
-                <th className="p-3">Docs Custodia</th>
+              <tr className="border-b border-outline-variant bg-surface-container-low text-left text-[11px] uppercase tracking-wider text-on-surface-variant">
+                <th className="p-3">Código</th>
+                <th className="p-3">Marca/Modelo</th>
+                <th className="p-3">Tipo</th>
+                <th className="p-3">Estado</th>
+                <th className="p-3">Compra</th>
+                <th className="p-3">MOI</th>
+                <th className="p-3">Tasa</th>
+                <th className="p-3">Depreciación</th>
+                <th className="p-3">En libros</th>
+                <th className="p-3">Docs</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-light dark:divide-border-dark">
+            <tbody className="divide-y divide-outline-variant">
               {depData.assets.map((a) => (
-                <tr key={a.id} onClick={() => onViewAsset?.(a.id)} className={`hover:bg-slate-50 dark:hover:bg-surface-lighter/40 transition-colors cursor-pointer ${a.isFullyDepreciated ? "bg-red-50/50 dark:bg-red-950/10" : ""}`}>
+                <tr
+                  key={a.id}
+                  onClick={() => onViewAsset?.(a.id)}
+                  className={`cursor-pointer transition-colors hover:bg-surface-container-high ${
+                    a.isFullyDepreciated ? "bg-error-container/10" : ""
+                  }`}
+                >
                   <td className="p-3 font-semibold text-primary underline decoration-primary/30">{a.assetCode}</td>
-                  <td className="p-3 text-slate-700 dark:text-slate-200">{a.brand} {a.model}</td>
+                  <td className="p-3 text-on-surface">{a.brand} {a.model}</td>
+                  <td className="p-3 text-on-surface-variant text-xs">{a.assetType?.name ?? "—"}</td>
                   <td className="p-3"><Badge text={statusLabel[a.status] ?? a.status} className={statusColor[a.status] ?? ""} /></td>
-                  <td className="p-3 text-slate-500 dark:text-slate-400">{locName(a)}</td>
-                  <td className="p-3 text-slate-500 dark:text-slate-400">{fmtDate(a.purchaseDate)}</td>
-                  <td className="p-3 text-slate-500 dark:text-slate-400">{a.usefulLifeYears} años</td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 rounded-full bg-slate-100 dark:bg-surface-lighter overflow-hidden">
-                        <div className={`h-full rounded-full ${a.isFullyDepreciated ? "bg-red-500" : "bg-amber-500"}`} style={{ width: `${a.depreciationPercent}%` }} />
-                      </div>
-                      <span className={`text-xs font-semibold ${a.isFullyDepreciated ? "text-red-500" : "text-slate-600 dark:text-slate-300"}`}>
-                        {a.depreciationPercent}%
-                      </span>
-                    </div>
+                  <td className="p-3 text-on-surface-variant text-xs">{fmtDate(a.purchaseDate)}</td>
+                  <td className="p-3 text-on-surface text-xs font-medium">{fmtMoney(a.purchasePriceResolved)}</td>
+                  <td className="p-3 text-on-surface-variant text-xs">
+                    {a.depreciationRatePercent != null ? `${a.depreciationRatePercent}%` : "—"}
                   </td>
-                  <td className="p-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400">{a.remainingPercent}%</td>
-                  <td className="p-3 text-slate-500 dark:text-slate-400 text-xs">
-                    {a.custodyDocs && a.custodyDocs.length > 0 ? `${a.custodyDocs.length} doc(s)` : "—"}
+                  <td className="p-3 min-w-[120px]">
+                    {a.bookValue != null ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-14 overflow-hidden rounded-full bg-surface-container-high">
+                          <div
+                            className={`h-full rounded-full ${a.isFullyDepreciated ? "bg-error" : "bg-amber-500"}`}
+                            style={{ width: `${a.depreciationPercent}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-semibold ${a.isFullyDepreciated ? "text-error" : "text-on-surface"}`}>
+                          {a.depreciationPercent}%
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-on-surface-variant italic" title={a.warnings?.join(" ")}>
+                        Sin datos
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400">{fmtMoney(a.bookValue)}</td>
+                  <td className="p-3 text-on-surface-variant text-xs">
+                    {a.custodyDocs && a.custodyDocs.length > 0 ? `${a.custodyDocs.length}` : "—"}
                   </td>
                 </tr>
               ))}
@@ -501,13 +597,16 @@ export const ReportsView = ({ currentRoute, onViewAsset }: { currentRoute: strin
     if (!scrapData) return <EmptyState message="No hay activos dados de baja." />;
 
     const exportScr = () => {
-      const headers = ["Código", "Marca", "Modelo", "No. Serie", "Tipo", "Ubicación", "Fecha Compra", "Fin de Vida", "Tickets Asociados", "Fecha Baja", "Última Custodia"];
+      const headers = ["Código", "Marca", "Modelo", "No. Serie", "Tipo", "Ubicación", "Motivo Baja", "Notas", "Registrado Por", "Fecha Baja", "Tickets"];
       const rows = scrapData.assets.map((a) => [
         a.assetCode, a.brand, a.model, a.serialNumber,
         deviceTypeLabel[a.deviceType] ?? a.deviceType,
-        locName(a), fmtDate(a.purchaseDate), fmtDate(a.endOfLifeDate),
-        a.ticketCount, fmtDate(a.updatedAt),
-        a.lastCustody?.assignedToName ?? "—",
+        locName(a),
+        a.decommissionReason ? assetDecommissionReasonLabels[a.decommissionReason] : "—",
+        a.decommissionNotes ?? "—",
+        a.decommissionedBy?.fullName ?? "—",
+        fmtDate(a.decommissionedAt ?? a.updatedAt),
+        a.ticketCount,
       ]);
       exportCsv("activos_baja.csv", headers, rows);
     };
@@ -531,9 +630,8 @@ export const ReportsView = ({ currentRoute, onViewAsset }: { currentRoute: strin
             <thead>
               <tr className="border-b border-border-light dark:border-border-dark text-left text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <th className="p-3">Código</th><th className="p-3">Marca/Modelo</th><th className="p-3">No. Serie</th>
-                <th className="p-3">Tipo</th><th className="p-3">Ubicación</th><th className="p-3">Compra</th>
-                <th className="p-3">Fin de Vida</th><th className="p-3">Tickets</th><th className="p-3">Fecha Baja</th>
-                <th className="p-3">Última Custodia</th>
+                <th className="p-3">Ubicación</th><th className="p-3">Motivo</th><th className="p-3">Registrado por</th>
+                <th className="p-3">Fecha Baja</th><th className="p-3">Tickets</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-light dark:divide-border-dark">
@@ -542,13 +640,13 @@ export const ReportsView = ({ currentRoute, onViewAsset }: { currentRoute: strin
                   <td className="p-3 font-semibold text-primary underline decoration-primary/30">{a.assetCode}</td>
                   <td className="p-3 text-slate-700 dark:text-slate-200">{a.brand} {a.model}</td>
                   <td className="p-3 text-slate-500 dark:text-slate-400">{a.serialNumber}</td>
-                  <td className="p-3 text-slate-500 dark:text-slate-400">{deviceTypeLabel[a.deviceType] ?? a.deviceType}</td>
                   <td className="p-3 text-slate-500 dark:text-slate-400">{locName(a)}</td>
-                  <td className="p-3 text-slate-500 dark:text-slate-400">{fmtDate(a.purchaseDate)}</td>
-                  <td className="p-3 text-slate-500 dark:text-slate-400">{fmtDate(a.endOfLifeDate)}</td>
+                  <td className="p-3 text-slate-500 dark:text-slate-400">
+                    {a.decommissionReason ? assetDecommissionReasonLabels[a.decommissionReason] : "—"}
+                  </td>
+                  <td className="p-3 text-slate-500 dark:text-slate-400">{a.decommissionedBy?.fullName ?? "—"}</td>
+                  <td className="p-3 text-slate-500 dark:text-slate-400">{fmtDate(a.decommissionedAt ?? a.updatedAt)}</td>
                   <td className="p-3 text-slate-500 dark:text-slate-400">{a.ticketCount}</td>
-                  <td className="p-3 text-slate-500 dark:text-slate-400">{fmtDate(a.updatedAt)}</td>
-                  <td className="p-3 text-xs text-slate-500 dark:text-slate-400">{a.lastCustody?.assignedToName ?? "—"}</td>
                 </tr>
               ))}
             </tbody>

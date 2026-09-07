@@ -27,6 +27,7 @@ type LoginResult = {
     email: string;
     role: { id: number; name: string };
   };
+  permissions?: string[];
 };
 
 const SESSION_STORAGE_KEY = "assetcore:session";
@@ -41,6 +42,7 @@ function App() {
   const [loggingIn, setLoggingIn] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [currentRoute, setCurrentRoute] = useState("/dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -114,6 +116,7 @@ function App() {
     setShowPreferencesModal(false);
     setAvatarUrl("");
     setMenus([]);
+    setPermissions([]);
     setAssets([]);
     setTicketTopics([]);
     setCurrentRoute("/dashboard");
@@ -156,13 +159,25 @@ function App() {
     }
   };
 
+  const refreshInventory = async () => {
+    await loadAssets();
+    setLoadingSummary(true);
+    try {
+      const summaryResponse = await api.get<{ summary: Summary }>("/dashboard/summary");
+      setSummary(summaryResponse.data.summary);
+      setSummaryUpdatedAt(new Date());
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
   const loadPrivateData = async () => {
     setLoadingPrivateData(true);
     setLoadingAssets(true);
     setLoadingSummary(true);
     try {
       const [menusResponse, assetsResponse, summaryResponse] = await Promise.all([
-        api.get<{ menus: MenuItem[] }>("/menus/me"),
+        api.get<{ menus: MenuItem[]; permissions: string[] }>("/menus/me"),
         api.get<{ assets: Asset[] }>("/assets"),
         api.get<{ summary: Summary }>(
           "/dashboard/summary"
@@ -170,6 +185,7 @@ function App() {
       ]);
 
       setMenus(menusResponse.data.menus);
+      setPermissions(menusResponse.data.permissions ?? []);
       setAssets(assetsResponse.data.assets);
       setSummary(summaryResponse.data.summary);
       setSummaryUpdatedAt(new Date());
@@ -221,18 +237,24 @@ function App() {
     setError("");
     setLoggingIn(true);
     try {
-      const response = await api.post<{ user: LoginResult["user"]; menus: MenuItem[] }>("/auth/login", {
+      const response = await api.post<{ user: LoginResult["user"]; menus: MenuItem[]; permissions: string[] }>("/auth/login", {
         email: loginEmail.trim(),
         password: loginPassword,
       });
 
       // Cookies set automatically by browser (HttpOnly)
-      const loginData: LoginResult = { user: response.data.user };
+      const loginData: LoginResult = {
+        user: response.data.user,
+        permissions: response.data.permissions ?? [],
+      };
       setSession(loginData);
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(loginData));
 
       if (response.data.menus) {
         setMenus(response.data.menus);
+      }
+      if (response.data.permissions) {
+        setPermissions(response.data.permissions);
       }
 
       try {
@@ -243,6 +265,7 @@ function App() {
     } catch (err) {
       setSession(null);
       setMenus([]);
+      setPermissions([]);
       setAssets([]);
       notify.error("Autenticación", "No fue posible autenticar. Verifica correo/contraseña o backend.");
     } finally {
@@ -370,6 +393,8 @@ function App() {
     model: string;
     serialNumber: string;
     equipmentValue?: number | null;
+    purchasePrice?: number | null;
+    salvageValue?: number | null;
     status: AssetStatus;
     assetTypeId?: number | null;
     processor?: string | null;
@@ -393,16 +418,8 @@ function App() {
 
       setShowAssetForm(false);
       setEditingAsset(null);
-      await loadAssets();
-      setLoadingSummary(true);
-      const summaryResponse = await api.get<{
-        summary: Summary;
-      }>("/dashboard/summary");
-      setSummary(summaryResponse.data.summary);
-      setSummaryUpdatedAt(new Date());
-      setLoadingSummary(false);
+      await refreshInventory();
     } catch (_error) {
-      setLoadingSummary(false);
       notify.error("Activos", "No se pudo guardar el activo.");
     }
   };
@@ -500,6 +517,18 @@ function App() {
         .then((response) => setAiLogs(response.data.logs))
         .catch(() => undefined);
     }
+    const isAssetsListRoute =
+      currentRoute === "/assets" ||
+      currentRoute === "/assets/list" ||
+      currentRoute.startsWith("/assets/list/");
+    if (
+      session &&
+      isAssetsListRoute &&
+      currentRoute !== "/assets/new" &&
+      currentRoute !== "/assets/edit"
+    ) {
+      void loadAssets();
+    }
   }, [currentRoute]);
 
   const usersSection = currentRoute.startsWith("/users/roles") ? "roles" : "users";
@@ -507,7 +536,7 @@ function App() {
   // Mostrar solo pantalla de login si no hay sesión
   if (!session) {
     return (
-      <div className={`${theme === "dark" ? "dark" : ""} flex min-h-screen items-center justify-center bg-background-light dark:bg-background-dark p-4 transition-colors`}>
+      <div className={`${theme === "dark" ? "dark" : ""} flex min-h-screen items-center justify-center bg-background p-4 transition-colors`}>
         {/* Background decoration */}
         <div className="pointer-events-none fixed inset-0 overflow-hidden">
           <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
@@ -518,24 +547,24 @@ function App() {
           <div className="absolute top-4 right-4 z-10">
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-xl p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-surface-lighter dark:hover:text-white transition"
+              className="rounded-xl p-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition focus-ring"
               title={`Cambiar a tema ${theme === "dark" ? "claro" : "oscuro"}`}
             >
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           </div>
 
-          <div className="rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-8 shadow-xl dark:shadow-2xl">
+          <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-8 shadow-elevation-3">
             <div className="mb-8 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent text-white shadow-glow">
                 <LogIn size={24} />
               </div>
-              <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">Bienvenido</h1>
-              <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">Ingresa a AssetCore ITAM</p>
+              <h1 className="font-display text-2xl font-bold text-on-surface">Bienvenido</h1>
+              <p className="mt-1.5 text-sm text-on-surface-variant">Ingresa a AssetCore ITAM</p>
             </div>
 
             {error ? (
-              <div className="mb-6 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-600 dark:text-red-400">{error}</div>
+              <div className="mb-6 rounded-xl border border-error-container bg-error-container px-4 py-3 text-sm text-on-error-container">{error}</div>
             ) : null}
 
             <form
@@ -546,19 +575,19 @@ function App() {
               }}
             >
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Correo electronico</label>
+                <label className="mb-1.5 block text-xs font-medium text-on-surface-variant">Correo electronico</label>
                 <input
                   type="email"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   autoComplete="email"
                   placeholder="tu@correo.com"
-                  className="w-full rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                  className="w-full rounded-xl border border-outline-variant bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/60 px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition focus-ring"
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Contrasena</label>
+                <label className="mb-1.5 block text-xs font-medium text-on-surface-variant">Contrasena</label>
                 <div className="relative">
                   <input
                     type={showLoginPassword ? "text" : "password"}
@@ -566,13 +595,13 @@ function App() {
                     onChange={(e) => setLoginPassword(e.target.value)}
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark px-4 py-3 pr-10 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                    className="w-full rounded-xl border border-outline-variant bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/60 px-4 py-3 pr-10 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition focus-ring"
                   />
                   <button
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface focus-ring"
                   >
                     {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -582,7 +611,7 @@ function App() {
               <button
                 type="submit"
                 disabled={loggingIn}
-                className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-lg"
+                className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-elevation-2 transition-all duration-200 hover:brightness-110 active:scale-[0.98] focus-ring disabled:opacity-60 disabled:pointer-events-none"
               >
                 {loggingIn ? (
                   <span className="inline-flex items-center gap-2">
@@ -601,7 +630,7 @@ function App() {
   }
 
   return (
-    <div className={`${theme === "dark" ? "dark" : ""} min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 transition-colors`}>
+    <div className={`${theme === "dark" ? "dark" : ""} min-h-screen bg-background text-on-background transition-colors`}>
       <UserPreferences
         isOpen={showPreferencesModal}
           onClose={closePreferencesModal}
@@ -615,18 +644,18 @@ function App() {
       />
 
       {manualTicketLog ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-xl rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-6 shadow-xl animate-scale-in transition-colors">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Crear Ticket Manual desde Webhook</h3>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mensaje #{manualTicketLog.id}</p>
-            <div className="mt-3 rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-background-dark p-3 text-xs text-slate-700 dark:text-slate-300 transition-colors">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-xl rounded-2xl border border-outline-variant bg-surface-container-lowest p-6 shadow-elevation-3 animate-scale-in transition-colors">
+            <h3 className="text-lg font-semibold text-on-surface">Crear Ticket Manual desde Webhook</h3>
+            <p className="mt-1 text-xs text-on-surface-variant">Mensaje #{manualTicketLog.id}</p>
+            <div className="mt-3 rounded-xl border border-outline-variant bg-surface-container-low p-3 text-xs text-on-surface transition-colors">
               {manualTicketLog.body}
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <select
                 value={manualTicketAssetId}
                 onChange={(e) => setManualTicketAssetId(e.target.value ? Number(e.target.value) : "")}
-                className="rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                className="rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors focus-ring"
               >
                 <option value="">Seleccionar activo...</option>
                 {assets.map((asset) => (
@@ -638,7 +667,7 @@ function App() {
               <select
                 value={manualTicketTopicId}
                 onChange={(e) => setManualTicketTopicId(e.target.value ? Number(e.target.value) : "")}
-                className="rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                className="rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors focus-ring"
               >
                 <option value="">Seleccionar tema...</option>
                 {ticketTopics.map((topic) => (
@@ -650,7 +679,7 @@ function App() {
               <select
                 value={manualTicketPriority}
                 onChange={(e) => setManualTicketPriority(e.target.value as TicketPriority)}
-                className="rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                className="rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors focus-ring"
               >
                 <option value="LOW">Baja</option>
                 <option value="MEDIUM">Media</option>
@@ -663,7 +692,7 @@ function App() {
                 type="button"
                 disabled={manualTicketAssetId === "" || creatingManualTicket || (ticketTopics.length > 0 && manualTicketTopicId === "")}
                 onClick={createManualTicketFromLog}
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60 transition"
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-on-primary hover:brightness-110 disabled:opacity-60 transition focus-ring"
               >
                 {creatingManualTicket ? "Creando..." : "Crear ticket"}
               </button>
@@ -675,7 +704,7 @@ function App() {
                   setManualTicketTopicId("");
                   setManualTicketPriority("MEDIUM");
                 }}
-                className="rounded-xl border border-border-light dark:border-border-dark px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-surface-lighter transition"
+                className="rounded-xl border border-outline-variant px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-high transition focus-ring"
               >
                 Cancelar
               </button>
@@ -698,20 +727,27 @@ function App() {
       <main className={`transition-all duration-300 min-h-screen ${sidebarCollapsed ? "lg:pl-[68px]" : "lg:pl-64"}`}>
         <div className={`mx-auto w-full p-4 sm:p-6 lg:p-8 animate-fade-in transition-all duration-300 ${sidebarCollapsed ? "max-w-[1600px]" : "max-w-[1400px]"}`}>
           {error ? (
-            <div className="mb-6 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-600 dark:text-red-400 transition-colors">
+            <div className="mb-6 rounded-xl border border-error-container bg-error-container px-4 py-3 text-sm text-on-error-container transition-colors">
               {error}
             </div>
           ) : null}
 
           {loadingPrivateData ? (
-            <div className="mb-6 flex items-center gap-3 rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark p-6 text-sm text-slate-500 dark:text-slate-400 shadow-card transition-colors">
+            <div className="mb-6 flex items-center gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-6 text-sm text-on-surface-variant shadow-card transition-colors">
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               Cargando datos iniciales...
             </div>
           ) : null}
 
           {currentRoute.startsWith("/dashboard") ? (
-            <DashboardCards summary={summary} loading={loadingSummary} lastUpdatedAt={summaryUpdatedAt} showTickets={menus.some((m) => m.path === "/tickets" || m.children?.some((c) => c.path.startsWith("/tickets")))} />
+            <DashboardCards
+              summary={summary}
+              loading={loadingSummary}
+              lastUpdatedAt={summaryUpdatedAt}
+              showTickets={menus.some((m) => m.path === "/tickets" || m.children?.some((c) => c.path.startsWith("/tickets")))}
+              onViewAsset={openAssetDetail}
+              onNavigate={setCurrentRoute}
+            />
           ) : currentRoute.startsWith("/settings/company") ? (
             <CompanyConfigView />
           ) : currentRoute.startsWith("/users") ? (
@@ -723,7 +759,10 @@ function App() {
           ) : currentRoute.startsWith("/projects") ? (
             <ProjectsView />
           ) : currentRoute.startsWith("/itam-config") ? (
-            <ItamConfigView />
+            <ItamConfigView
+              canWrite={permissions.includes("itam.config.write")}
+              onImportComplete={refreshInventory}
+            />
           ) : currentRoute.startsWith("/reports") ? (
             <ReportsView currentRoute={currentRoute} onViewAsset={openAssetDetail} />
           ) : currentRoute.startsWith("/lifecycle-report") ? (
@@ -746,6 +785,11 @@ function App() {
               onCreateTicket={createTicket}
               onTransitionTicket={transitionTicket}
               onRefreshAsset={() => openAssetDetail(selectedAsset.id)}
+              onDecommissioned={async () => {
+                setSelectedAsset(null);
+                setQrImageUrl(null);
+                await loadAssets();
+              }}
               onBack={() => {
                 setSelectedAsset(null);
                 setQrImageUrl(null);

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { loginRateLimiter, refreshRateLimiter } from "../../middlewares/rate-limit.middleware";
 import { requireAuth } from "../../middlewares/auth.middleware";
 import {
   changeMyPasswordHandler,
@@ -11,8 +12,8 @@ import {
 
 const authRouter = Router();
 
-authRouter.post("/login", loginHandler);
-authRouter.post("/refresh", refreshHandler);
+authRouter.post("/login", loginRateLimiter, loginHandler);
+authRouter.post("/refresh", refreshRateLimiter, refreshHandler);
 authRouter.post("/logout", logoutHandler);
 authRouter.get("/me", requireAuth, getMyProfileHandler);
 authRouter.put("/me", requireAuth, updateMyProfileHandler);

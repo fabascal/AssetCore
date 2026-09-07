@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: assetcore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-assetcore}
+      POSTGRES_USER: ${POSTGRES_USER:-assetcore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init/01_schema_rbac.sql:/docker-entrypoint-initdb.d/01_schema_rbac.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-assetcore} -d ${POSTGRES_DB:-assetcore}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - assetcore
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: assetcore-backend
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.prod}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env.prod}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?Set REFRESH_TOKEN_SECRET in .env.prod}
+      CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN in .env.prod}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?Set WEBHOOK_SECRET in .env.prod}
+      ACCESS_TOKEN_EXPIRES_IN_SEC: ${ACCESS_TOKEN_EXPIRES_IN_SEC:-900}
+      REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-7}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
+      PROVIDER_WHATSAPP_TO: ${PROVIDER_WHATSAPP_TO:-}
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/health | grep -q '\"db\":\"ok\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - assetcore
+
+  nginx:
+    build:
+      context: .
+      dockerfile: infra/nginx/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    container_name: assetcore-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./infra/nginx/certs:/etc/letsencrypt:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - assetcore
+
+volumes:
+  postgres_data:
+  uploads_data:
+
+networks:
+  assetcore:
+    driver: bridge

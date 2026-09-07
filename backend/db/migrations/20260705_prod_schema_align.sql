@@ -1,0 +1,124 @@
+-- Align prod DB (SQL init) with Prisma schema — additive only.
+
+DO $$
+BEGIN
+  CREATE TYPE storage_type AS ENUM ('SSD', 'HDD', 'NVME');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS processor TEXT;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS ram_gb INTEGER;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS storage_gb INTEGER;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS storage_type storage_type;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS purchase_date TIMESTAMP(3);
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS warranty_end TIMESTAMP(3);
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS useful_life_years INTEGER;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS end_of_life_date TIMESTAMP(3);
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS location_id INTEGER;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS assigned_to_name TEXT;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS assigned_to_date TIMESTAMP(3);
+
+CREATE TABLE IF NOT EXISTS locations (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  parent_id INTEGER,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS catalog_brands (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS catalog_models (
+  id SERIAL PRIMARY KEY,
+  brand_id INTEGER NOT NULL REFERENCES catalog_brands(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (brand_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS catalog_processors (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS catalog_ram (
+  id SERIAL PRIMARY KEY,
+  label TEXT NOT NULL UNIQUE,
+  size_gb INTEGER NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS catalog_storage (
+  id SERIAL PRIMARY KEY,
+  label TEXT NOT NULL UNIQUE,
+  size_gb INTEGER NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS custody_documents (
+  id SERIAL PRIMARY KEY,
+  asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+  assigned_to_name TEXT NOT NULL,
+  assigned_to_date TIMESTAMP(3),
+  filename TEXT NOT NULL,
+  original_name TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  uploaded_by_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS companies (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  rfc TEXT,
+  address TEXT,
+  phone TEXT,
+  email TEXT,
+  website TEXT,
+  logo_data TEXT,
+  logo_mime TEXT,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS support_level_assignments (
+  id SERIAL PRIMARY KEY,
+  level_id INTEGER NOT NULL REFERENCES support_topic_levels(id) ON DELETE CASCADE,
+  location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL,
+  tech_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  ALTER TABLE locations
+    ADD CONSTRAINT locations_parent_id_fkey
+    FOREIGN KEY (parent_id) REFERENCES locations(id) ON DELETE SET NULL;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER TABLE assets
+    ADD CONSTRAINT assets_location_id_fkey
+    FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ticket_escalation_tracking_ticket_id_key
+  ON ticket_escalation_tracking(ticket_id);

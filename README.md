@@ -10,74 +10,58 @@ Plataforma ITAM + Mesa de Ayuda con:
 - Docker + Docker Compose
 - (Opcional) `jq` para scripts de validacion
 
-## Levantar proyecto
+## Desarrollo local
 
 Desde la raiz `AssetCore`:
 
 ```bash
-docker-compose down -v && docker-compose up --build
+docker-compose up --build
 ```
 
 Servicios:
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:4000/api`
-- PostgreSQL: `localhost:5432`
-- Redis: `localhost:6379`
+- PostgreSQL: `localhost:5432` (solo dev)
+- Redis: `localhost:6379` (solo dev)
 
-## Credenciales seed
+### Credenciales de desarrollo
 
-- Admin:
-  - Email: `admin@assetcore.local`
-  - Password: `admin123`
-- Tecnico Nivel 1:
-  - Email: `tecnico.n1@assetcore.local`
-  - Password: `tecnico123`
+Solo aplican cuando se usa `docker-compose.yml` con seed [`02_seed_dev.sql`](infra/postgres/init/02_seed_dev.sql):
 
-## Datos iniciales
+| Rol | Email | Password |
+|-----|-------|----------|
+| Admin | `admin@combu-express.com.mx` | `admin123` |
+| Tecnico | `rvazquez@combu-express.com.mx` | `tecnico123` |
 
-El script SQL de init carga:
-- Roles, permisos y menus dinamicos
-- 5 activos de prueba (Dell, HP, Cisco, etc.)
-- Tickets y eventos base
-- Logs preparados para flujo AI/Webhooks
+**No uses estas credenciales en produccion.**
 
-Archivo: `infra/postgres/init/01_init_rbac.sql`
+## Produccion
+
+Ver [`docs/PRODUCTION.md`](docs/PRODUCTION.md) y [`.env.prod.example`](.env.prod.example).
+
+```bash
+cp .env.prod.example .env.prod
+# Completar secretos y CORS_ORIGIN
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+Acceso: `http://TU_IP:4040` (puerto configurable con `NGINX_HTTP_PORT` en `.env.prod`).
+
+## Datos iniciales (desarrollo)
+
+- [`01_schema_rbac.sql`](infra/postgres/init/01_schema_rbac.sql) — schema, roles, menus
+- [`02_seed_dev.sql`](infra/postgres/init/02_seed_dev.sql) — usuarios y activos demo
+
+## Migraciones
+
+Ver [`docs/DATABASE.md`](docs/DATABASE.md).
 
 ## Pruebas rapidas API
 
-### Opcion 1: REST Client (Cursor/VS Code)
-
-Usa `api_tests.http` para:
-- Login
-- Listar activos
-- Crear ticket
-- Simular webhook
-
-### Opcion 2: Script E2E AI
+Usa `api_tests.http` o:
 
 ```bash
 cd backend
 ./scripts/verify-ai-flow.sh
+WEBHOOK_SECRET=tu_secreto ./scripts/test-webhook.sh
 ```
-
-Este script:
-- Ejecuta 3 casos webhook
-- Hace login admin
-- Consulta `/api/ai-logs`
-- Muestra resumen:
-  - Total mensajes
-  - Tickets creados por IA
-  - Mensajes sin match tecnico
-
-## Script adicional de simulacion webhook
-
-```bash
-cd backend
-./scripts/test-webhook.sh
-```
-
-## Notas de operacion
-
-- Webhook publico de entrada: `POST /api/webhooks/incoming`
-- Monitor de logs IA (admin): `GET /api/ai-logs`
-- Vista frontend de logs permite crear ticket manual cuando no hay match automatico.

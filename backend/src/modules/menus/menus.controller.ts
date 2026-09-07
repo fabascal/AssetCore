@@ -9,5 +9,8 @@ export const getMyMenusHandler = async (req: Request, res: Response) => {
   }
 
   const menus = await getMenusByRole(authReq.user.roleId);
-  return res.status(200).json({ menus });
+  return res.status(200).json({
+    menus,
+    permissions: authReq.user.permissions,
+  });
 };

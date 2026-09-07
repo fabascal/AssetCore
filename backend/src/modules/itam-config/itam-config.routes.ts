@@ -13,8 +13,8 @@ import {
 
 const itamConfigRouter = Router();
 
-const read = checkPermission("assets.read");
-const write = checkPermission("assets.write");
+const read = checkPermission("itam.config.read");
+const write = checkPermission("itam.config.write");
 
 /* Locations */
 itamConfigRouter.get("/locations", read, listLocationsHandler);

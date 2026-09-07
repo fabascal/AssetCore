@@ -34,7 +34,7 @@ const statusColor: Record<TicketStatus, string> = {
   IN_PROGRESS: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
   PROVIDER: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400",
   CLOSED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
-  CANCELLED: "bg-slate-100 text-slate-500 dark:bg-slate-500/10 dark:text-slate-400",
+  CANCELLED: "bg-slate-100 text-slate-500 dark:bg-slate-500/10 dark:text-on-surface-variant",
 };
 
 const priorityColor: Record<TicketPriority, string> = {
@@ -145,17 +145,17 @@ export const TicketsView = () => {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Mesa de Ayuda</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <h2 className="text-2xl font-bold text-on-surface">Mesa de Ayuda</h2>
+          <p className="mt-1 text-sm text-on-surface-variant">
             Gestiona tickets de soporte. Haz clic en un ticket para ver su detalle.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-xl border border-border-light dark:border-border-dark overflow-hidden">
+          <div className="inline-flex rounded-xl border border-outline-variant overflow-hidden">
             <button
               type="button"
               onClick={() => setViewMode("list")}
-              className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition ${viewMode === "list" ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-surface-lighter"}`}
+              className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition ${viewMode === "list" ? "bg-primary text-on-primary" : "text-on-surface-variant hover:bg-surface-container-high"}`}
             >
               <LayoutList size={14} />
               Lista
@@ -163,7 +163,7 @@ export const TicketsView = () => {
             <button
               type="button"
               onClick={() => setViewMode("kanban")}
-              className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition ${viewMode === "kanban" ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-surface-lighter"}`}
+              className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition ${viewMode === "kanban" ? "bg-primary text-on-primary" : "text-on-surface-variant hover:bg-surface-container-high"}`}
             >
               <Columns3 size={14} />
               Kanban
@@ -176,7 +176,7 @@ export const TicketsView = () => {
                 .then(() => notify.success("Mesa de ayuda", "Listado actualizado."))
                 .catch(() => notify.error("Mesa de ayuda", "No fue posible refrescar tickets."))
             }
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border-light dark:border-border-dark px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-surface-lighter transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-outline-variant px-3 py-2 text-xs font-medium text-on-surface-variant hover:bg-surface-container-high transition"
           >
             <RefreshCw size={14} />
             Refrescar
@@ -195,21 +195,21 @@ export const TicketsView = () => {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por titulo, activo, tema o asignado..."
-            className="w-full rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark pl-9 pr-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition"
+            className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest pl-9 pr-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition focus-ring"
           />
         </div>
 
         <div className="relative">
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as "ALL" | TicketStatus)}
-            className="appearance-none rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark pl-8 pr-8 py-2.5 text-sm text-slate-700 dark:text-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition"
+            className="appearance-none rounded-xl border border-outline-variant bg-surface-container-lowest pl-8 pr-8 py-2.5 text-sm text-on-surface-variant focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition"
           >
             <option value="ALL">Todos los estados</option>
             <option value="OPEN">Abierto</option>
@@ -229,25 +229,25 @@ export const TicketsView = () => {
         />
       ) : (
       /* Table */
-      <div className="overflow-hidden rounded-2xl border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark shadow-card">
+      <div className="overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-card">
         <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
-            <tr className="border-b border-border-light dark:border-border-dark bg-slate-50/80 dark:bg-background-dark">
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">#</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ticket</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Activo</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tema</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Estado</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Prioridad</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Asignado</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fecha</th>
+            <tr className="border-b border-outline-variant bg-surface-container-low">
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">#</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Ticket</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Activo</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Tema</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Estado</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Prioridad</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Asignado</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Fecha</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light dark:divide-border-dark">
             {loading ? (
               <tr>
-                <td className="px-4 py-12 text-center text-sm text-slate-400" colSpan={8}>
+                <td className="px-4 py-12 text-center text-sm text-on-surface-variant" colSpan={8}>
                   <span className="inline-flex items-center gap-2">
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                     Cargando tickets...
@@ -261,19 +261,19 @@ export const TicketsView = () => {
                 <tr
                   key={ticket.id}
                   onClick={() => setView(ticket.id)}
-                  className="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-surface-lighter/40"
+                  className="cursor-pointer transition-colors hover:bg-surface-container-high"
                 >
-                  <td className="px-4 py-3.5 text-xs font-mono text-slate-400">
+                  <td className="px-4 py-3.5 text-xs font-mono text-on-surface-variant">
                     {ticket.id}
                   </td>
                   <td className="px-4 py-3.5 align-top">
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{ticket.title}</p>
-                    <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">{ticket.description}</p>
+                    <p className="text-sm font-medium text-on-surface">{ticket.title}</p>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-on-surface-variant">{ticket.description}</p>
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
+                  <td className="px-4 py-3.5 text-sm text-on-surface-variant">
                     {ticket.asset ? `${ticket.asset.assetCode}` : `#${ticket.assetId}`}
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">{ticket.supportTopic?.name ?? "-"}</td>
+                  <td className="px-4 py-3.5 text-sm text-on-surface-variant">{ticket.supportTopic?.name ?? "-"}</td>
                   <td className="px-4 py-3.5">
                     <span className={`inline-flex items-center rounded-lg px-2 py-1 text-[11px] font-semibold ${statusColor[ticket.status]}`}>
                       {statusLabel[ticket.status]}
@@ -284,8 +284,8 @@ export const TicketsView = () => {
                       {priorityLabel[ticket.priority]}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">{ticket.assignedTo?.fullName ?? "-"}</td>
-                  <td className="px-4 py-3.5 text-xs text-slate-400">
+                  <td className="px-4 py-3.5 text-sm text-on-surface-variant">{ticket.assignedTo?.fullName ?? "-"}</td>
+                  <td className="px-4 py-3.5 text-xs text-on-surface-variant">
                     {new Date(ticket.createdAt).toLocaleDateString()}
                   </td>
                 </tr>
@@ -293,7 +293,7 @@ export const TicketsView = () => {
 
             {!loading && filteredTickets.length === 0 ? (
               <tr>
-                <td className="px-4 py-12 text-center text-sm text-slate-400" colSpan={8}>
+                <td className="px-4 py-12 text-center text-sm text-on-surface-variant" colSpan={8}>
                   No hay tickets para mostrar con esos filtros.
                 </td>
               </tr>

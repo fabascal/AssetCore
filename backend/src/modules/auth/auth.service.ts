@@ -5,6 +5,7 @@ import { z } from "zod";
 import { env } from "../../config/env";
 import { prisma } from "../../shared/prisma";
 import { getMenusByRole } from "../menus/menus.service";
+import { getRolePermissionCodes } from "../../shared/rbac.utils";
 import { LoginResponse } from "./auth.types";
 
 const loginSchema = z.object({
@@ -142,6 +143,7 @@ export const login = async (payload: unknown): Promise<LoginResponse> => {
   }
 
   const allowedMenus = await getMenusByRole(user.roleId);
+  const permissions = await getRolePermissionCodes(user.roleId);
 
   const accessToken = generateAccessToken({
     id: user.id,
@@ -165,6 +167,7 @@ export const login = async (payload: unknown): Promise<LoginResponse> => {
       },
     },
     menus: allowedMenus,
+    permissions,
   };
 };
 

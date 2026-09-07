@@ -1,11 +1,60 @@
 export type AssetStatus = "AVAILABLE" | "ASSIGNED" | "MAINTENANCE" | "SCRAP";
+
+export const assetStatusLabels: Record<AssetStatus, string> = {
+  AVAILABLE: "Disponible",
+  ASSIGNED: "Asignado",
+  MAINTENANCE: "Mantenimiento",
+  SCRAP: "Baja",
+};
+
+export type AssetDecommissionReason = "END_OF_LIFE" | "DAMAGE" | "THEFT" | "OTHER";
+
+export const assetDecommissionReasonLabels: Record<AssetDecommissionReason, string> = {
+  END_OF_LIFE: "Fin de vida útil",
+  DAMAGE: "Daño / irreparable",
+  THEFT: "Robo / extravío",
+  OTHER: "Otro",
+};
 export type StorageType = "SSD" | "HDD" | "NVME";
 
 export type AssetType = {
   id: number;
   name: string;
   usefulLifeYears: number;
+  depreciationRate?: number;
   isActive: boolean;
+};
+
+export type DepreciationBreakdown = {
+  purchasePrice: number;
+  salvageValue: number;
+  depreciableBase: number;
+  depreciationRate: number;
+  depreciationRatePercent: number;
+  purchaseDate: string;
+  asOfDate: string;
+  monthsElapsed: number;
+  maxDepreciationMonths: number;
+  monthlyDepreciation: number;
+  accumulatedDepreciation: number;
+  bookValue: number;
+  isFullyDepreciated: boolean;
+  depreciationPercent: number;
+  monthsUntilFullyDepreciated: number;
+};
+
+export type AssetDepreciationResponse = {
+  asset: {
+    id: number;
+    assetCode: string;
+    brand: string;
+    model: string;
+    serialNumber: string;
+    status: string;
+    assetType: { id: number; name: string; depreciationRate: number } | null;
+  };
+  depreciation: DepreciationBreakdown | null;
+  warnings: string[];
 };
 
 export type TicketStatus = "OPEN" | "IN_PROGRESS" | "PROVIDER" | "CLOSED" | "CANCELLED";
@@ -104,9 +153,11 @@ export type Asset = {
   model: string;
   serialNumber: string;
   equipmentValue?: number | null;
+  purchasePrice?: number | null;
+  salvageValue?: number | null;
   status: AssetStatus;
   assetTypeId?: number | null;
-  assetType?: { id: number; name: string; usefulLifeYears: number } | null;
+  assetType?: { id: number; name: string; usefulLifeYears: number; depreciationRate?: number } | null;
   processor?: string | null;
   ramGb?: number | null;
   storageGb?: number | null;
@@ -116,9 +167,14 @@ export type Asset = {
   usefulLifeYears?: number | null;
   endOfLifeDate?: string | null;
   locationId?: number | null;
+  locationPath?: string | null;
   location?: { id: number; name: string; parentId?: number | null; parent?: { id: number; name: string } | null } | null;
   assignedToName?: string | null;
   assignedToDate?: string | null;
+  decommissionReason?: AssetDecommissionReason | null;
+  decommissionNotes?: string | null;
+  decommissionedAt?: string | null;
+  decommissionedBy?: { id: number; fullName: string; email: string } | null;
   specifications?: Record<string, string>;
   custodyDocs?: CustodyDocument[];
   tickets?: Ticket[];

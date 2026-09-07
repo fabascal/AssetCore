@@ -13,4 +13,5 @@ export type LoginResponse = {
     };
   };
   menus: MenuNode[];
+  permissions: string[];
 };

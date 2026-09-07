@@ -4,7 +4,8 @@ import fs from "fs";
 import multer from "multer";
 import QRCode from "qrcode";
 import { z } from "zod";
-import { createAsset, deleteAsset, getAssetById, getLifecycleReport, listAssets, updateAsset, listCustodyDocs, addCustodyDoc, deleteCustodyDoc, getCustodyDocById, bulkImportAssets } from "./assets.service";
+import { createAsset, deleteAsset, decommissionAsset, getAssetById, getLifecycleReport, listAssets, updateAsset, listCustodyDocs, addCustodyDoc, deleteCustodyDoc, getCustodyDocById, bulkImportAssets } from "./assets.service";
+import { getAssetDepreciation } from "../depreciation/depreciation.service";
 import { AuthRequest } from "../../types/auth-request";
 
 const idParamSchema = z.object({
@@ -27,6 +28,24 @@ export const getAssetHandler = async (req: Request, res: Response) => {
   return res.status(200).json({ asset });
 };
 
+export const getAssetDepreciationHandler = async (req: Request, res: Response) => {
+  const { id } = idParamSchema.parse(req.params);
+  const result = await getAssetDepreciation(id);
+
+  if (!result) {
+    return res.status(404).json({ message: "Activo no encontrado" });
+  }
+
+  if (!result.depreciation) {
+    return res.status(422).json({
+      ...result,
+      message: result.warnings.join(" "),
+    });
+  }
+
+  return res.status(200).json(result);
+};
+
 export const createAssetHandler = async (req: Request, res: Response) => {
   try {
     const asset = await createAsset(req.body);
@@ -44,6 +63,25 @@ export const updateAssetHandler = async (req: Request, res: Response) => {
     return res.status(200).json({ asset });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al actualizar activo";
+    return res.status(400).json({ message });
+  }
+};
+
+export const decommissionAssetHandler = async (req: Request, res: Response) => {
+  try {
+    const authReq = req as AuthRequest;
+    if (!authReq.user?.id) {
+      return res.status(401).json({ message: "No autenticado" });
+    }
+
+    const { id } = idParamSchema.parse(req.params);
+    const asset = await decommissionAsset(id, authReq.user.id, req.body);
+    return res.status(200).json({ asset });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error al dar de baja el activo";
+    if (message.includes("no encontrado")) {
+      return res.status(404).json({ message });
+    }
     return res.status(400).json({ message });
   }
 };

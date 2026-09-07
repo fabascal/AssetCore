@@ -4,27 +4,130 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Material 3 Design Tokens (Light) ─────────────── */
 :root {
   color-scheme: light;
+
+  /* Primary */
+  --color-primary: #4f6ef7;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #dce1ff;
+  --color-on-primary-container: #001552;
+
+  /* Secondary */
+  --color-secondary: #585e71;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #dce1f9;
+  --color-on-secondary-container: #161b2c;
+
+  /* Tertiary */
+  --color-tertiary: #8b5cf6;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #e9ddff;
+  --color-on-tertiary-container: #381e72;
+
+  /* Error */
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #410002;
+
+  /* Surface (tonal elevation) */
+  --color-surface-dim: #dbd9e0;
+  --color-surface: #faf8ff;
+  --color-surface-bright: #faf8ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f4f3fa;
+  --color-surface-container: #efedf4;
+  --color-surface-container-high: #e9e7ef;
+  --color-surface-container-highest: #e3e1e9;
+  --color-on-surface: #1b1b21;
+  --color-on-surface-variant: #45464f;
+
+  /* Outline & background */
+  --color-outline: #767680;
+  --color-outline-variant: #c6c5d0;
+  --color-background: #faf8ff;
+  --color-on-background: #1b1b21;
+
+  /* Inverse & scrim */
+  --color-inverse-surface: #303036;
+  --color-inverse-on-surface: #f3f0f7;
+  --color-inverse-primary: #b4c5ff;
+  --color-scrim: #000000;
+
+  /* Legacy primary shades (backward compat) */
+  --color-primary-dark: #3b5de7;
+  --color-primary-light: #6b8aff;
+  --color-primary-50: #eef1ff;
 }
 
+/* ── Material 3 Design Tokens (Dark) ──────────────── */
 :root.dark {
   color-scheme: dark;
+
+  /* Primary */
+  --color-primary: #b4c5ff;
+  --color-on-primary: #002b75;
+  --color-primary-container: #1d3f97;
+  --color-on-primary-container: #dce1ff;
+
+  /* Secondary */
+  --color-secondary: #bfc6dc;
+  --color-on-secondary: #293141;
+  --color-secondary-container: #3f4759;
+  --color-on-secondary-container: #dce1f9;
+
+  /* Tertiary */
+  --color-tertiary: #cfbcff;
+  --color-on-tertiary: #381e72;
+  --color-tertiary-container: #4f378b;
+  --color-on-tertiary-container: #e9ddff;
+
+  /* Error */
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+
+  /* Surface (tonal elevation) */
+  --color-surface-dim: #121318;
+  --color-surface: #121318;
+  --color-surface-bright: #38393f;
+  --color-surface-container-lowest: #0d0e13;
+  --color-surface-container-low: #1c1b21;
+  --color-surface-container: #201f26;
+  --color-surface-container-high: #2b2a30;
+  --color-surface-container-highest: #36343b;
+  --color-on-surface: #e5e1e9;
+  --color-on-surface-variant: #c6c5d0;
+
+  /* Outline & background */
+  --color-outline: #908f9a;
+  --color-outline-variant: #45464f;
+  --color-background: #121318;
+  --color-on-background: #e5e1e9;
+
+  /* Inverse & scrim */
+  --color-inverse-surface: #e5e1e9;
+  --color-inverse-on-surface: #303036;
+  --color-inverse-primary: #4f6ef7;
+  --color-scrim: #000000;
+
+  /* Legacy primary shades (backward compat) */
+  --color-primary-dark: #3b5de7;
+  --color-primary-light: #6b8aff;
+  --color-primary-50: #1d3f97;
 }
 
 body {
   margin: 0;
   font-family: "Inter", system-ui, sans-serif;
-  background: #f0f2f5;
-  color: #0f172a;
+  background: var(--color-background);
+  color: var(--color-on-background);
   transition: background-color 200ms ease, color 200ms ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-.dark body {
-  background: #0c111d;
-  color: #e2e8f0;
 }
 
 #root {
@@ -53,13 +156,36 @@ body {
   background: rgba(100, 116, 139, 0.35);
 }
 
-/* Card hover lift */
 @layer utilities {
+  /* Card hover lift */
   .hover-lift {
     @apply transition-all duration-200;
   }
   .hover-lift:hover {
     @apply shadow-card-hover -translate-y-0.5;
+  }
+
+  /* Material 3 tonal elevation */
+  .elevation-1 {
+    @apply bg-surface-container-low shadow-elevation-1;
+  }
+  .elevation-2 {
+    @apply bg-surface-container shadow-elevation-2;
+  }
+  .elevation-3 {
+    @apply bg-surface-container-high shadow-elevation-3;
+  }
+  .elevation-4 {
+    @apply bg-surface-container-high;
+  }
+  .elevation-5 {
+    @apply bg-surface-container-highest;
+  }
+
+  /* Standardized focus ring for accessibility */
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 40%, transparent);
   }
 }
 

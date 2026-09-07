@@ -5,10 +5,12 @@ import {
 	createUserHandler,
 	deleteRoleHandler,
 	getRoleMenusHandler,
+	getRolePermissionsHandler,
 	getUserHandler,
 	listRolesHandler,
 	listUsersHandler,
 	updateRoleMenusHandler,
+	updateRolePermissionsHandler,
 	updateRoleHandler,
 	updateUserHandler,
 } from "./users.controller";
@@ -22,6 +24,8 @@ usersRouter.put("/roles/:id", checkPermission("users.write"), updateRoleHandler)
 usersRouter.delete("/roles/:id", checkPermission("users.write"), deleteRoleHandler);
 usersRouter.get("/roles/:id/menus", checkPermission("users.write"), getRoleMenusHandler);
 usersRouter.put("/roles/:id/menus", checkPermission("users.write"), updateRoleMenusHandler);
+usersRouter.get("/roles/:id/permissions", checkPermission("users.write"), getRolePermissionsHandler);
+usersRouter.put("/roles/:id/permissions", checkPermission("users.write"), updateRolePermissionsHandler);
 usersRouter.get("/:id", checkPermission("users.read"), getUserHandler);
 usersRouter.post("/", checkPermission("users.write"), createUserHandler);
 usersRouter.put("/:id", checkPermission("users.write"), updateUserHandler);

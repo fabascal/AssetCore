@@ -5,11 +5,13 @@ import {
   createUser,
   deleteRole,
   getRoleMenuAssignments,
+  getRolePermissionAssignments,
   getUserById,
   listRoles,
   listUsers,
   updateRole,
   updateRoleMenuAssignments,
+  updateRolePermissionAssignments,
   updateUser,
 } from "./users.service";
 
@@ -135,6 +137,34 @@ export const updateRoleMenusHandler = async (req: Request, res: Response) => {
     return res.status(200).json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "No fue posible actualizar menus del rol";
+    if (message.includes("no encontrado")) {
+      return res.status(404).json({ message });
+    }
+    return res.status(400).json({ message });
+  }
+};
+
+export const getRolePermissionsHandler = async (req: Request, res: Response) => {
+  try {
+    const { id } = idParamSchema.parse(req.params);
+    const data = await getRolePermissionAssignments(id);
+    return res.status(200).json(data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "No fue posible obtener permisos del rol";
+    if (message.includes("no encontrado")) {
+      return res.status(404).json({ message });
+    }
+    return res.status(400).json({ message });
+  }
+};
+
+export const updateRolePermissionsHandler = async (req: Request, res: Response) => {
+  try {
+    const { id } = idParamSchema.parse(req.params);
+    const data = await updateRolePermissionAssignments(id, req.body);
+    return res.status(200).json(data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "No fue posible actualizar permisos del rol";
     if (message.includes("no encontrado")) {
       return res.status(404).json({ message });
     }
