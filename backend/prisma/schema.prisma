@@ -90,6 +90,8 @@ model User {
   assignedTasks  ProjectTask[]  @relation("TaskAssignee")
   custodyUploads CustodyDocument[] @relation("CustodyUploader")
   decommissionedAssets Asset[] @relation("AssetDecommissionedBy")
+  decommissionedVehicles Vehicle[] @relation("VehicleDecommissionedBy")
+  vehicleDocUploads VehicleDocument[] @relation("VehicleDocUploader")
 
   @@map("users")
 }
@@ -227,6 +229,7 @@ model Location {
   parent      Location?  @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children    Location[] @relation("LocationHierarchy")
   assets      Asset[]
+  vehicles    Vehicle[]
   supportAssignments SupportLevelAssignment[]
 
   @@map("locations")
@@ -551,6 +554,84 @@ model AssetType {
   assets          Asset[]
 
   @@map("asset_types")
+}
+
+enum VehicleType {
+  SEDAN
+  SUV
+  PICKUP
+  VAN
+  TRUCK
+  MOTORCYCLE
+  OTHER
+
+  @@map("vehicle_type")
+}
+
+enum VehicleDocumentType {
+  CARTA_COMPROMISO
+  TARJETA_CIRCULACION
+  POLIZA_SEGURO
+  FACTURA_MANTENIMIENTO
+  FACTURA_COMPRA
+  VERIFICACION
+  OTRO
+
+  @@map("vehicle_document_type")
+}
+
+model Vehicle {
+  id              Int          @id @default(autoincrement())
+  vehicleCode     String       @unique @map("vehicle_code")
+  brand           String
+  model           String
+  year            Int?
+  color           String?
+  plateNumber     String       @unique @map("plate_number")
+  serialNumber    String?      @unique @map("serial_number")
+  engineNumber    String?      @map("engine_number")
+  vehicleType     VehicleType  @default(OTHER) @map("vehicle_type")
+  mileage         Int?         @map("mileage")
+  status          AssetStatus  @default(AVAILABLE)
+  purchaseDate    DateTime?    @map("purchase_date")
+  purchasePrice   Float?       @map("purchase_price")
+  salvageValue    Float        @default(0) @map("salvage_value")
+  warrantyEnd     DateTime?    @map("warranty_end")
+  usefulLifeYears Int?         @map("useful_life_years")
+  endOfLifeDate   DateTime?    @map("end_of_life_date")
+  locationId      Int?         @map("location_id")
+  assignedToName  String?      @map("assigned_to_name")
+  assignedToDate  DateTime?    @map("assigned_to_date")
+  decommissionReason   AssetDecommissionReason? @map("decommission_reason")
+  decommissionNotes    String?                  @map("decommission_notes")
+  decommissionedAt     DateTime?                @map("decommissioned_at")
+  decommissionedById   Int?                     @map("decommissioned_by_id")
+  specifications  Json         @default("{}")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at")
+  location        Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  decommissionedBy User?       @relation("VehicleDecommissionedBy", fields: [decommissionedById], references: [id], onDelete: SetNull)
+  documents       VehicleDocument[]
+
+  @@map("vehicles")
+}
+
+model VehicleDocument {
+  id             Int                @id @default(autoincrement())
+  vehicleId      Int                @map("vehicle_id")
+  documentType   VehicleDocumentType @map("document_type")
+  description    String?
+  expiresAt      DateTime?          @map("expires_at")
+  filename       String
+  originalName   String             @map("original_name")
+  mimeType       String             @map("mime_type")
+  sizeBytes      Int                @map("size_bytes")
+  uploadedById   Int?               @map("uploaded_by_id")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  vehicle        Vehicle            @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  uploadedBy     User?              @relation("VehicleDocUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@map("vehicle_documents")
 }
 
 model Company {

@@ -17,7 +17,9 @@ import { ItamConfigView } from "./components/ItamConfigView";
 import { CompanyConfigView } from "./components/CompanyConfigView";
 import { LifecycleReport } from "./components/LifecycleReport";
 import { ReportsView } from "./components/ReportsView";
-import { Asset, AssetStatus, StorageType, TicketPriority } from "./types";
+import { VehiclesTable, VehicleDetail } from "./components/VehiclesView";
+import { VehicleForm } from "./components/VehicleForm";
+import { Asset, AssetStatus, StorageType, TicketPriority, Vehicle } from "./types";
 import { notify } from "./lib/toast";
 
 type LoginResult = {
@@ -74,6 +76,11 @@ function App() {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [showAssetForm, setShowAssetForm] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [showVehicleForm, setShowVehicleForm] = useState(false);
+  const [loadingVehicles, setLoadingVehicles] = useState(false);
   const [manualTicketLog, setManualTicketLog] = useState<{
     id: number;
     subject: string | null;
@@ -156,6 +163,16 @@ function App() {
       setAssets(assetsResponse.data.assets);
     } finally {
       setLoadingAssets(false);
+    }
+  };
+
+  const loadVehicles = async () => {
+    setLoadingVehicles(true);
+    try {
+      const res = await api.get<{ vehicles: Vehicle[] }>("/vehicles");
+      setVehicles(res.data.vehicles);
+    } finally {
+      setLoadingVehicles(false);
     }
   };
 
@@ -424,6 +441,51 @@ function App() {
     }
   };
 
+  /* ─── Vehicles ─── */
+
+  const openVehicleDetail = async (vehicleId: number) => {
+    try {
+      setCurrentRoute("/vehicles");
+      setError("");
+      window.scrollTo({ top: 0 });
+      const res = await api.get<{ vehicle: Vehicle }>(`/vehicles/${vehicleId}`);
+      setSelectedVehicle(res.data.vehicle);
+      setShowVehicleForm(false);
+      setEditingVehicle(null);
+    } catch (_error) {
+      notify.error("Vehiculos", "No se pudo cargar el detalle del vehiculo.");
+    }
+  };
+
+  const openCreateVehicleForm = () => {
+    setCurrentRoute("/vehicles/new");
+    setSelectedVehicle(null);
+    setEditingVehicle(null);
+    setShowVehicleForm(true);
+  };
+
+  const openEditVehicleForm = (vehicle: Vehicle) => {
+    setCurrentRoute("/vehicles/edit");
+    setSelectedVehicle(null);
+    setEditingVehicle(vehicle);
+    setShowVehicleForm(true);
+  };
+
+  const submitVehicle = async (payload: Record<string, unknown>) => {
+    try {
+      if (editingVehicle) {
+        await api.put(`/vehicles/${editingVehicle.id}`, payload);
+      } else {
+        await api.post("/vehicles", payload);
+      }
+      setShowVehicleForm(false);
+      setEditingVehicle(null);
+      await loadVehicles();
+    } catch (_error) {
+      notify.error("Vehiculos", "No se pudo guardar el vehiculo.");
+    }
+  };
+
   const createTicket = async (payload: {
     title: string;
     description: string;
@@ -503,6 +565,7 @@ function App() {
 
   useEffect(() => {
     setSelectedAsset(null);
+    setSelectedVehicle(null);
     if (qrImageUrl) {
       URL.revokeObjectURL(qrImageUrl);
       setQrImageUrl(null);
@@ -510,6 +573,10 @@ function App() {
     if (currentRoute !== "/assets/new" && currentRoute !== "/assets/edit") {
       setShowAssetForm(false);
       setEditingAsset(null);
+    }
+    if (currentRoute !== "/vehicles/new" && currentRoute !== "/vehicles/edit") {
+      setShowVehicleForm(false);
+      setEditingVehicle(null);
     }
     if (currentRoute.startsWith("/ai-logs") && session) {
       api
@@ -528,6 +595,18 @@ function App() {
       currentRoute !== "/assets/edit"
     ) {
       void loadAssets();
+    }
+    const isVehiclesRoute =
+      currentRoute === "/vehicles" ||
+      currentRoute === "/vehicles/list" ||
+      currentRoute.startsWith("/vehicles/list/");
+    if (
+      session &&
+      isVehiclesRoute &&
+      currentRoute !== "/vehicles/new" &&
+      currentRoute !== "/vehicles/edit"
+    ) {
+      void loadVehicles();
     }
   }, [currentRoute]);
 
@@ -763,6 +842,31 @@ function App() {
               canWrite={permissions.includes("itam.config.write")}
               onImportComplete={refreshInventory}
             />
+          ) : currentRoute.startsWith("/vehicles") ? (
+            selectedVehicle ? (
+              <VehicleDetail
+                vehicle={selectedVehicle}
+                canWrite={permissions.includes("vehicles.write")}
+                onBack={() => { setSelectedVehicle(null); setCurrentRoute("/vehicles"); }}
+                onRefresh={() => openVehicleDetail(selectedVehicle.id)}
+                onDecommissioned={async () => { setSelectedVehicle(null); await loadVehicles(); }}
+              />
+            ) : showVehicleForm ? (
+              <VehicleForm
+                initialVehicle={editingVehicle}
+                onSubmit={submitVehicle}
+                onCancel={() => { setShowVehicleForm(false); setEditingVehicle(null); setCurrentRoute("/vehicles"); }}
+              />
+            ) : (
+              <VehiclesTable
+                vehicles={vehicles}
+                loading={loadingVehicles}
+                canWrite={permissions.includes("vehicles.write")}
+                onView={openVehicleDetail}
+                onEdit={openEditVehicleForm}
+                onNew={openCreateVehicleForm}
+              />
+            )
           ) : currentRoute.startsWith("/reports") ? (
             <ReportsView currentRoute={currentRoute} onViewAsset={openAssetDetail} />
           ) : currentRoute.startsWith("/lifecycle-report") ? (

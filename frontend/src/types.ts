@@ -180,6 +180,78 @@ export type Asset = {
   tickets?: Ticket[];
 };
 
+// ── Vehicles ─────────────────────────────────
+
+export type VehicleType = "SEDAN" | "SUV" | "PICKUP" | "VAN" | "TRUCK" | "MOTORCYCLE" | "OTHER";
+
+export const vehicleTypeLabels: Record<VehicleType, string> = {
+  SEDAN: "Sedan",
+  SUV: "SUV",
+  PICKUP: "Pickup",
+  VAN: "Van",
+  TRUCK: "Camion",
+  MOTORCYCLE: "Motocicleta",
+  OTHER: "Otro",
+};
+
+export type VehicleDocumentType = "CARTA_COMPROMISO" | "TARJETA_CIRCULACION" | "POLIZA_SEGURO" | "FACTURA_MANTENIMIENTO" | "FACTURA_COMPRA" | "VERIFICACION" | "OTRO";
+
+export const vehicleDocumentTypeLabels: Record<VehicleDocumentType, string> = {
+  CARTA_COMPROMISO: "Carta Compromiso",
+  TARJETA_CIRCULACION: "Tarjeta de Circulacion",
+  POLIZA_SEGURO: "Poliza de Seguro",
+  FACTURA_MANTENIMIENTO: "Factura de Mantenimiento",
+  FACTURA_COMPRA: "Factura de Compra",
+  VERIFICACION: "Verificacion",
+  OTRO: "Otro",
+};
+
+export type VehicleDocument = {
+  id: number;
+  vehicleId: number;
+  documentType: VehicleDocumentType;
+  description?: string | null;
+  expiresAt?: string | null;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+  uploadedBy?: { id: number; fullName: string } | null;
+};
+
+export type Vehicle = {
+  id: number;
+  vehicleCode: string;
+  brand: string;
+  model: string;
+  year?: number | null;
+  color?: string | null;
+  plateNumber: string;
+  serialNumber?: string | null;
+  engineNumber?: string | null;
+  vehicleType: VehicleType;
+  mileage?: number | null;
+  status: AssetStatus;
+  purchaseDate?: string | null;
+  purchasePrice?: number | null;
+  salvageValue?: number | null;
+  warrantyEnd?: string | null;
+  usefulLifeYears?: number | null;
+  endOfLifeDate?: string | null;
+  locationId?: number | null;
+  locationPath?: string | null;
+  location?: { id: number; name: string; parentId?: number | null; parent?: { id: number; name: string } | null } | null;
+  assignedToName?: string | null;
+  assignedToDate?: string | null;
+  decommissionReason?: AssetDecommissionReason | null;
+  decommissionNotes?: string | null;
+  decommissionedAt?: string | null;
+  decommissionedBy?: { id: number; fullName: string; email: string } | null;
+  specifications?: Record<string, string>;
+  documents?: VehicleDocument[];
+};
+
 // ── Projects & Gantt ─────────────────────────────────
 
 export type ProjectStatus = "PLANNING" | "IN_PROGRESS" | "COMPLETED" | "ON_HOLD" | "CANCELLED";

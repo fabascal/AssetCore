@@ -14,6 +14,8 @@ export const getDashboardSummary = async () => {
     recentTickets,
     assignedAssets,
     scrapAssets,
+    totalVehicles,
+    vehiclesByStatus,
   ] = await Promise.all([
     prisma.asset.count(),
     prisma.ticket.count({
@@ -47,6 +49,8 @@ export const getDashboardSummary = async () => {
     }),
     prisma.asset.count({ where: { status: "ASSIGNED" } }),
     prisma.asset.count({ where: { status: "SCRAP" } }),
+    prisma.vehicle.count(),
+    prisma.vehicle.groupBy({ by: ["status"], _count: { id: true } }),
   ]);
 
   return {
@@ -56,6 +60,8 @@ export const getDashboardSummary = async () => {
     escalatedToProvider,
     assignedAssets,
     scrapAssets,
+    totalVehicles,
+    vehiclesByStatus: vehiclesByStatus.map((r) => ({ status: r.status, count: r._count.id })),
     assetsByStatus: assetsByStatus.map((r) => ({ status: r.status, count: r._count.id })),
     assetsByType: assetsByType.map((r) => ({ type: r.name, count: r._count.assets })),
     ticketsByPriority: ticketsByPriority.map((r) => ({ priority: r.priority, count: r._count.id })),

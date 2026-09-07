@@ -12,6 +12,7 @@ import aiLogsRouter from "../modules/ai-logs/ai-logs.routes";
 import projectsRouter from "../modules/projects/projects.routes";
 import itamConfigRouter from "../modules/itam-config/itam-config.routes";
 import reportsRouter from "../modules/reports/reports.routes";
+import vehiclesRouter from "../modules/vehicles/vehicles.routes";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { checkPermission } from "../middlewares/permission.middleware";
 
@@ -39,5 +40,6 @@ apiRouter.use("/projects", projectsRouter);
 apiRouter.use("/helpdesk-config", helpdeskConfigRouter);
 apiRouter.use("/itam-config", itamConfigRouter);
 apiRouter.use("/reports", reportsRouter);
+apiRouter.use("/vehicles", vehiclesRouter);
 
 export default apiRouter;

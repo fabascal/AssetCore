@@ -21,6 +21,8 @@ export type Summary = {
   escalatedToProvider: number;
   assignedAssets: number;
   scrapAssets: number;
+  totalVehicles?: number;
+  vehiclesByStatus?: { status: string; count: number }[];
   assetsByStatus: { status: string; count: number }[];
   assetsByType: { type: string; count: number }[];
   ticketsByPriority: { priority: string; count: number }[];
@@ -51,6 +53,7 @@ const kpiCards = [
   { key: "assignedAssets" as const, label: "Asignados", icon: UserCheck, gradient: "from-emerald-500 to-teal-600", bgLight: "bg-emerald-50", bgDark: "dark:bg-emerald-950/20", iconColor: "text-emerald-500", ticketOnly: false },
   { key: "maintenanceAssets" as const, label: "En Mantenimiento", icon: Wrench, gradient: "from-orange-500 to-red-500", bgLight: "bg-orange-50", bgDark: "dark:bg-orange-950/20", iconColor: "text-orange-500", ticketOnly: false },
   { key: "scrapAssets" as const, label: "Dados de Baja", icon: Trash2, gradient: "from-slate-400 to-slate-600", bgLight: "bg-slate-100", bgDark: "dark:bg-slate-800/30", iconColor: "text-slate-500", ticketOnly: false },
+  { key: "totalVehicles" as const, label: "Vehiculos", icon: Truck, gradient: "from-indigo-500 to-purple-600", bgLight: "bg-indigo-50", bgDark: "dark:bg-indigo-950/20", iconColor: "text-indigo-500", ticketOnly: false },
   { key: "ticketsOpen" as const, label: "Tickets Abiertos", icon: Ticket, gradient: "from-amber-500 to-orange-500", bgLight: "bg-amber-50", bgDark: "dark:bg-amber-950/20", iconColor: "text-amber-500", ticketOnly: true },
   { key: "escalatedToProvider" as const, label: "Escalados a Proveedor", icon: Truck, gradient: "from-rose-500 to-pink-600", bgLight: "bg-rose-50", bgDark: "dark:bg-rose-950/20", iconColor: "text-rose-500", ticketOnly: true },
 ];
